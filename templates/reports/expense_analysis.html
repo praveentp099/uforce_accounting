@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense & Wage Report | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-line"></i> Expense & Wage Analysis</h1>
+    <button id="export-pdf" class="btn btn-outline-danger">
+        <i class="fas fa-file-pdf"></i> Export to PDF
+    </button>
+</div>
+
+<!-- This is the content that will be exported to PDF -->
+<div id="report-content">
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">Daily Cost Trend ({{ start_date|date:'d M Y' }} - {{ end_date|date:'d M Y' }})</div>
+                <div class="card-body">
+                    <canvas id="dailyCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">Top Expense Categories</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for category in top_categories %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ category.name }}
+                                <span class="badge bg-primary rounded-pill">${{ category.total|floatformat:2 }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">No expenses in this period.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">Most Expensive Projects</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                         {% for name, total in top_projects %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ name }}
+                                <span class="badge bg-danger rounded-pill">${{ total|floatformat:2 }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">No project costs in this period.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Required libraries for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart.js rendering
+    const ctx = document.getElementById('dailyCostChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    label: 'Daily Expenses',
+                    data: {{ chart_expense_values|safe }},
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    fill: true,
+                }, {
+                    label: 'Daily Wages',
+                    data: {{ chart_wage_values|safe }},
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { return '$' + value.toLocaleString(); }
+                        }
+                    },
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // PDF Export Logic
+    const exportButton = document.getElementById('export-pdf');
+    if (exportButton) {
+        exportButton.addEventListener('click', function() {
+            const reportContent = document.getElementById('report-content');
+            
+            html2canvas(reportContent, {
+                scale: 2, // Improve resolution
+                useCORS: true 
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                
+                const imgWidth = pdfWidth - 40; // with margin
+                const imgHeight = imgWidth / ratio;
+                
+                pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
+
+                const fileName = `uForce_Report_{{ start_date|date:'Y-m-d' }}_to_{{ end_date|date:'Y-m-d' }}.pdf`;
+                pdf.save(fileName);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+

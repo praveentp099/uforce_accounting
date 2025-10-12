@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Photos for {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-camera-retro"></i> Photos for {{ project.name }}</h1>
+        <h5 class="text-muted">Daily Site Progress</h5>
+    </div>
+    <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Project</a>
+</div>
+
+<!-- Upload & Capture Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Add New Photos for Today</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Upload from Device</h6>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.image.label }}</label>
+                        {% render_field form.image class="form-control" %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.caption.label }}</label>
+                        {% render_field form.caption class="form-control" %}
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload Photo</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <h6>Capture with Camera</h6>
+                <button id="start-camera" class="btn btn-info"><i class="fas fa-camera"></i> Start Camera</button>
+                <div id="camera-container" class="mt-2" style="display: none;">
+                    <video id="video" width="100%" height="auto" autoplay playsinline></video>
+                    <button id="click-photo" class="btn btn-success mt-2">Capture Photo</button>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Gallery -->
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Uploaded Photos</h5></div>
+    <div class="card-body">
+        <div class="row">
+            {% for photo in photos %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="image-container" style="height: 200px; overflow: hidden;">
+                        <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.caption|default:'Project Photo' }}" style="object-fit: cover; width: 100%; height: 100%;">
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ photo.caption|default:"No caption" }}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">By {{ photo.uploaded_by.username }} on {{ photo.date }}</small>
+                        <a href="{{ photo.image.url }}" download class="btn btn-sm btn-outline-secondary" title="Download Image">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No photos have been uploaded for this project yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startCameraButton = document.getElementById('start-camera');
+    const cameraContainer = document.getElementById('camera-container');
+    const video = document.getElementById('video');
+    const clickPhotoButton = document.getElementById('click-photo');
+    const canvas = document.getElementById('canvas');
+
+    startCameraButton.addEventListener('click', async () => {
+        cameraContainer.style.display = 'block';
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = stream;
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            alert("Could not access the camera. Please ensure you have given permission and are not on an insecure (http) connection.");
+            cameraContainer.style.display = 'none';
+        }
+    });
+
+    clickPhotoButton.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        canvas.toBlob(function(blob) {
+            const formData = new FormData();
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            formData.append('csrfmiddlewaretoken', csrfToken);
+            formData.append('image', blob, `capture-${new Date().toISOString()}.png`);
+            formData.append('caption', 'Captured from camera');
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Photo upload failed.');
+                }
+            });
+        }, 'image/png');
+    });
+});
+</script>
+{% endblock %}
+

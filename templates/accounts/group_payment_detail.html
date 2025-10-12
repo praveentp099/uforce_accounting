@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Payments for {{ group.name }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-user-friends"></i> {{ group.name }}</h1>
+        <h5 class="text-muted">Leader: {{ group.leader.name|default:"N/A" }}</h5>
+    </div>
+    <a href="{% url 'payable_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Payables</a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+        <h5 class="card-title text-danger">Amount to be Paid</h5>
+        <h2 class="mb-0">${{ total_owed|floatformat:2 }}</h2>
+    </div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+        <h5 class="card-title text-success">Total Paid</h5>
+        <h2 class="mb-0">${{ total_paid|floatformat:2 }}</h2>
+    </div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+        <h5 class="card-title text-info">Grand Total</h5>
+        <h2 class="mb-0">${{ total_owed|add:total_paid|floatformat:2 }}</h2>
+    </div></div></div>
+</div>
+
+<div class="row">
+    <!-- Make a Payment & Payment History -->
+    <div class="col-lg-4 mb-4">
+        <div class="card mb-4">
+            <div class="card-header"><h5>Make a Payment</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="payment_date" class="form-label">Payment Date</label>
+                        <input type="date" name="payment_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Record Payment</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5>Payment History</h5></div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for payment in payment_history %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ payment.payment_date }}</span>
+                        <strong>${{ payment.amount|floatformat:2 }}</strong>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No payments recorded yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unpaid Work Breakdown -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header"><h5>Unpaid Work Details</h5></div>
+            <div class="card-body">
+                {% for date, attendances in unpaid_by_date.items %}
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2"><strong>Date: {{ date }}</strong></h6>
+                        <ul class="list-group">
+                            {% for att in attendances %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ att.worker.name }} on <strong>{{ att.project.name }}</strong></span>
+                                <span>${{ att.total_wage|floatformat:2 }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-muted py-5">
+                        <h4><i class="fas fa-check-circle text-success"></i> All Clear!</h4>
+                        <p>All wages for this group are paid up.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

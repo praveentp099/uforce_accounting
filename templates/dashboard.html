@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-folder-plus"></i> Dashboard</h1>
+            <span class="text-muted">Welcome back, {{ user.get_full_name|default:user.username }}!</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Statistics Cards -->
+<div class="row mb-4">
+    <!-- Total Bank Balance -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'account_list' %}?type=asset" class="text-decoration-none">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Bank Balance</h5>
+                            <h2 class="mb-0">${{ total_bank_balance|floatformat:2 }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-university fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Pending Invoices (Receivables) -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'account_list' %}?type=receivable" class="text-decoration-none">
+            <div class="card stat-card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Pending Invoices</h5>
+                            <h2 class="mb-0">${{ pending_invoices_total|floatformat:2 }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-invoice-dollar fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Accounts Payable (Credit) -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'payable_list' %}" class="text-decoration-none">
+            <div class="card stat-card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">To Be Paid</h5>
+                            <h2 class="mb-0">${{ total_credit_due|floatformat:2 }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hand-holding-usd fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Active Projects -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'project_list' %}" class="text-decoration-none">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Active Projects</h5>
+                            <h2 class="mb-0">{{ active_projects_count }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-project-diagram fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Charts and Recent Activity -->
+<div class="row">
+    <!-- Cash Flow Chart -->
+    <div class="col-lg-7 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Monthly Cash Flow</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Transactions -->
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                <ul class="list-group list-group-flush">
+                    {% for trans in recent_transactions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ trans.description|truncatewords:4 }}</strong>
+                            <small class="d-block text-muted">{{ trans.date }} | {{ trans.account.name }}</small>
+                        </div>
+                        <span class="badge bg-{% if trans.transaction_type == 'credit' %}success{% else %}danger{% endif %} rounded-pill">
+                            {% if trans.transaction_type == 'credit' %}+{% else %}-{% endif %} ${{ trans.amount|floatformat:2 }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No recent transactions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const cashFlowCtx = document.getElementById('cashFlowChart');
+    if (cashFlowCtx) {
+        new Chart(cashFlowCtx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    label: 'Income',
+                    data: {{ chart_income_values|safe }},
+                    backgroundColor: 'rgba(39, 174, 96, 0.2)',
+                    borderColor: 'rgba(39, 174, 96, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }, {
+                    label: 'Expenses',
+                    data: {{ chart_expense_values|safe }},
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

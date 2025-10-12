@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-money-bill-wave"></i> {{ title }}</h1>
+    {% if project %}
+    <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Project
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" class="row g-3">
+            {% csrf_token %}
+
+            {% for error in form.non_field_errors %}
+            <div class="col-12">
+                <div class="alert alert-danger">{{ error }}</div>
+            </div>
+            {% endfor %}
+
+            <!-- If project is a field in the form -->
+            {% if form.project %}
+            <div class="col-12">
+                <label for="{{ form.project.id_for_label }}" class="form-label">{{ form.project.label }}</label>
+                {% render_field form.project class="form-select" %}
+                {{ form.project.errors }}
+            </div>
+            {% endif %}
+
+            <div class="col-md-6">
+                <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                {% render_field form.date class="form-control" type="date" %}
+                {{ form.date.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label for="{{ form.expense_type.id_for_label }}" class="form-label">{{ form.expense_type.label }}</label>
+                {% render_field form.expense_type class="form-select" %}
+                {{ form.expense_type.errors }}
+            </div>
+
+            <div class="col-12">
+                <label for="{{ form.amount.id_for_label }}" class="form-label">{{ form.amount.label }}</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {% render_field form.amount class="form-control" type="number" step="0.01" %}
+                </div>
+                {{ form.amount.errors }}
+            </div>
+
+            <div class="col-12">
+                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                {% render_field form.description class="form-control" rows="3" %}
+                {{ form.description.errors }}
+            </div>
+
+            <div class="col-12">
+                <label for="{{ form.receipt.id_for_label }}" class="form-label">{{ form.receipt.label }}</label>
+                {% render_field form.receipt class="form-control" %}
+                 {{ form.receipt.errors }}
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ project.name }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-tasks"></i> {{ project.name }}</h1>
+        <h5 class="text-muted">{{ project.client_company }}</h5>
+    </div>
+    <div>
+        <a href="{% url 'project_photos' project.pk %}" class="btn btn-info"><i class="fas fa-camera-retro"></i> View Photos</a>
+        <a href="{% url 'project_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Project List</a>
+    </div>
+</div>
+
+<!-- Project Details & Progress -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Project Overview</h5>
+        <a href="{% url 'project_edit' project.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Edit Details</a>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>Description:</strong> {{ project.description|linebreaksbr|default:"N/A" }}</p>
+                <p><strong>Supervisor:</strong> {{ project.supervisor.username|default:"N/A" }}</p>
+                <p><strong>Priority:</strong> <span class="badge bg-info">{{ project.get_priority_display }}</span></p>
+                <p><strong>Status:</strong> <span class="badge bg-success">{{ project.get_status_display }}</span></p>
+                <hr>
+                <h6>Client Comments:</h6>
+                <p>{{ project.client_comments|linebreaksbr|default:"N/A" }}</p>
+                <h6>Internal Remarks:</h6>
+                <p>{{ project.remarks|linebreaksbr|default:"N/A" }}</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <h5>Progress</h5>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ project.progress }}%;" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100">
+                        <strong>{{ project.progress }}%</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Management -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header"><h5><i class="fas fa-list-check"></i> Project Tasks</h5></div>
+            <div class="card-body">
+                {% for task in tasks %}
+                    <div class="d-flex align-items-center mb-2 p-2 border rounded {% if task.status == 'completed' %}bg-light{% endif %}">
+                        <div class="flex-grow-1">
+                            <strong class="{% if task.status == 'completed' %}text-decoration-line-through text-muted{% endif %}">{{ task.title }}</strong>
+                            <small class="d-block text-muted">
+                                Start: {{ task.start_date|default:"N/A" }} | Due: {{ task.due_date|default:"N/A" }} | Status: <strong>{{ task.get_status_display }}</strong>
+                            </small>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit Task"
+                                data-bs-toggle="modal" data-bs-target="#taskModal"
+                                onclick="openTaskModal('{% url 'task_update' task.pk %}', 'Edit Task: {{ task.title|escapejs }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form method="post" action="{% url 'task_toggle_status' task.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                {% if task.status == 'todo' %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Start Task"><i class="fas fa-play"></i></button>
+                                {% elif task.status == 'in_progress' %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Complete"><i class="fas fa-check"></i></button>
+                                {% elif task.status == 'completed' %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Restart Task"><i class="fas fa-undo"></i></button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        {% if task.is_overdue %}
+                            <span class="badge bg-danger ms-2">Due</span>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center py-3">No tasks have been added to this project yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header"><h5><i class="fas fa-plus-circle"></i> Add a New Task</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_task" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">{{ task_form.title.label }}</label>
+                        {% render_field task_form.title class="form-control" %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ task_form.description.label }}</label>
+                        {% render_field task_form.description class="form-control" %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ task_form.start_date.label }}</label>
+                        {% render_field task_form.start_date class="form-control" %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ task_form.due_date.label }}</label>
+                        {% render_field task_form.due_date class="form-control" %}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add Task</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Edit Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalLabel">Edit Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe id="taskModalFrame" src="about:blank" style="width: 100%; height: 500px; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openTaskModal(url, title) {
+    document.getElementById('taskModalLabel').innerText = title;
+    document.getElementById('taskModalFrame').src = url;
+}
+
+// Listen for the success message from the iframe
+window.addEventListener('message', function(event) {
+    if (event.data === 'taskUpdated') {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
+        modal.hide();
+        location.reload(); // Reload the page to show changes
+    }
+});
+</script>
+{% endblock %}
+

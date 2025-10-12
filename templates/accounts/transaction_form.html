@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-exchange-alt"></i> {{ title }}</h1>
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            
+            {% for error in form.non_field_errors %}
+            <div class="col-12"><div class="alert alert-danger">{{ error }}</div></div>
+            {% endfor %}
+
+            <div class="col-md-6">
+                <label for="{{ form.account.id_for_label }}" class="form-label">{{ form.account.label }}</label>
+                {% render_field form.account class="form-select" %}
+                <small class="text-danger">{{ form.account.errors|first }}</small>
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.project.id_for_label }}" class="form-label">{{ form.project.label }}</label>
+                {% render_field form.project class="form-select" %}
+                <small class="text-danger">{{ form.project.errors|first }}</small>
+            </div>
+
+            <div class="col-md-4">
+                <label for="{{ form.transaction_type.id_for_label }}" class="form-label">{{ form.transaction_type.label }}</label>
+                {% render_field form.transaction_type class="form-select" %}
+                <small class="text-danger">{{ form.transaction_type.errors|first }}</small>
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.amount.id_for_label }}" class="form-label">{{ form.amount.label }}</label>
+                {% render_field form.amount class="form-control" type="number" step="0.01" %}
+                <small class="text-danger">{{ form.amount.errors|first }}</small>
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                {% render_field form.date class="form-control" %}
+                <small class="text-danger">{{ form.date.errors|first }}</small>
+            </div>
+
+            <div class="col-12">
+                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                {% render_field form.description class="form-control" %}
+                <small class="text-danger">{{ form.description.errors|first }}</small>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Transaction</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

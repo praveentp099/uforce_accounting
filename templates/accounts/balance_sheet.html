@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-balance-scale"></i> Balance Sheet</h1>
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- Assets Column -->
+            <div class="col-md-6">
+                <h4 class="text-success">Assets</h4>
+                <hr>
+                <dl class="row">
+                    <dt class="col-sm-6">Current Assets</dt>
+                    <dd class="col-sm-6 text-end">${{ current_assets|floatformat:2 }}</dd>
+                    
+                    <dt class="col-sm-6">Fixed Assets</dt>
+                    <dd class="col-sm-6 text-end">${{ fixed_assets|floatformat:2 }}</dd>
+                </dl>
+                <hr>
+                <dl class="row">
+                    <dt class="col-sm-6"><strong>Total Assets</strong></dt>
+                    <dd class="col-sm-6 text-end"><strong>${{ total_assets|floatformat:2 }}</strong></dd>
+                </dl>
+            </div>
+
+            <!-- Liabilities & Equity Column -->
+            <div class="col-md-6">
+                <h4 class="text-danger">Liabilities & Equity</h4>
+                <hr>
+                <h5>Liabilities</h5>
+                <dl class="row">
+                    <dt class="col-sm-6">Current Liabilities</dt>
+                    <dd class="col-sm-6 text-end">${{ current_liabilities|floatformat:2 }}</dd>
+
+                    <dt class="col-sm-6">Long-Term Liabilities</dt>
+                    <dd class="col-sm-6 text-end">${{ long_term_liabilities|floatformat:2 }}</dd>
+                </dl>
+                <hr>
+                <h5>Equity</h5>
+                <dl class="row">
+                    <dt class="col-sm-6">Owner's Equity</dt>
+                    <dd class="col-sm-6 text-end">${{ equity|floatformat:2 }}</dd>
+                </dl>
+                <hr>
+                <dl class="row">
+                    <dt class="col-sm-6"><strong>Total Liabilities & Equity</strong></dt>
+                    <dd class="col-sm-6 text-end"><strong>${{ total_liabilities_equity|floatformat:2 }}</strong></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

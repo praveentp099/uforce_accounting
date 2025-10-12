@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Worker Attendance | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users"></i> Worker Attendance Records</h1>
+    {% if user|has_role:'admin,owner,supervisor1,supervisor2,foreman' %}
+    <a href="{% url 'attendance_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Attendance</a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Select a Worker to View Detailed Attendance</h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for worker in workers %}
+                <a href="{% url 'worker_attendance_detail' worker.pk %}" class="list-group-item list-group-item-action">
+                    <strong>{{ worker.name }}</strong>
+                    <small class="text-muted ms-2">({{ worker.get_worker_type_display }})</small>
+                </a>
+            {% empty %}
+                <p class="text-muted">No active workers found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

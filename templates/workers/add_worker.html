@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-plus"></i> {{ title }}</h1>
+    <a href="{% url 'worker_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to List</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+
+            {% for error in form.non_field_errors %}
+            <div class="col-12"><div class="alert alert-danger">{{ error }}</div></div>
+            {% endfor %}
+
+            <div class="col-md-6">
+                <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                {% render_field form.name class="form-control" %}
+                <small class="text-danger">{{ form.name.errors|first }}</small>
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.worker_type.id_for_label }}" class="form-label">{{ form.worker_type.label }}</label>
+                {% render_field form.worker_type class="form-select" id="worker_type_select" %}
+                <small class="text-danger">{{ form.worker_type.errors|first }}</small>
+            </div>
+            
+            <div class="col-md-6" id="group-field" style="display: none;">
+                <label for="{{ form.group.id_for_label }}" class="form-label">{{ form.group.label }}</label>
+                {% render_field form.group class="form-select" %}
+                 <small class="text-danger">{{ form.group.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6" id="new-group-field" style="display: none;">
+                <label for="{{ form.new_group_name.id_for_label }}" class="form-label">{{ form.new_group_name.label }}</label>
+                {% render_field form.new_group_name class="form-control" %}
+                <small class="form-text text-muted">{{ form.new_group_name.help_text }}</small>
+                <small class="text-danger">{{ form.new_group_name.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6" id="fixed-wage-field" style="display: none;">
+                <label for="{{ form.fixed_wage.id_for_label }}" class="form-label">{{ form.fixed_wage.label }}</label>
+                {% render_field form.fixed_wage class="form-control" type="number" step="0.01" %}
+                 <small class="text-danger">{{ form.fixed_wage.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6" id="daily-wage-field" style="display: none;">
+                <label for="{{ form.daily_wage.id_for_label }}" class="form-label">{{ form.daily_wage.label }}</label>
+                {% render_field form.daily_wage class="form-control" type="number" step="0.01" %}
+                <small class="text-danger">{{ form.daily_wage.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6">
+                <label for="{{ form.contact.id_for_label }}" class="form-label">{{ form.contact.label }}</label>
+                {% render_field form.contact class="form-control" %}
+                <small class="text-danger">{{ form.contact.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6">
+                <label for="{{ form.ot1_rate.id_for_label }}" class="form-label">{{ form.ot1_rate.label }}</label>
+                {% render_field form.ot1_rate class="form-control" type="number" step="0.01" %}
+                <small class="text-danger">{{ form.ot1_rate.errors|first }}</small>
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.ot2_rate.id_for_label }}" class="form-label">{{ form.ot2_rate.label }}</label>
+                {% render_field form.ot2_rate class="form-control" type="number" step="0.01" %}
+                 <small class="text-danger">{{ form.ot2_rate.errors|first }}</small>
+            </div>
+
+            <div class="col-md-6" id="is-leader-field" style="display: none;">
+                <div class="form-check form-switch pt-4">
+                    {% render_field form.is_leader class="form-check-input" %}
+                    <label class="form-check-label" for="{{ form.is_leader.id_for_label }}">{{ form.is_leader.label }}</label>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    {% render_field form.is_active class="form-check-input" %}
+                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                </div>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Worker</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const workerTypeSelect = document.getElementById('worker_type_select');
+    const groupField = document.getElementById('group-field');
+    const newGroupField = document.getElementById('new-group-field');
+    const isLeaderField = document.getElementById('is-leader-field');
+    const fixedWageField = document.getElementById('fixed-wage-field');
+    const dailyWageField = document.getElementById('daily-wage-field');
+
+    function toggleFields() {
+        const selectedType = workerTypeSelect.value;
+        if (selectedType === 'own') {
+            groupField.style.display = 'none';
+            newGroupField.style.display = 'none';
+            isLeaderField.style.display = 'none';
+            fixedWageField.style.display = 'block';
+            dailyWageField.style.display = 'none';
+        } else if (selectedType === 'outsourced') {
+            groupField.style.display = 'block';
+            newGroupField.style.display = 'block';
+            isLeaderField.style.display = 'block';
+            fixedWageField.style.display = 'none';
+            dailyWageField.style.display = 'block';
+        } else {
+            // Hide all by default if nothing is selected
+            groupField.style.display = 'none';
+            newGroupField.style.display = 'none';
+            isLeaderField.style.display = 'none';
+            fixedWageField.style.display = 'none';
+            dailyWageField.style.display = 'none';
+        }
+    }
+
+    // Initial toggle on page load
+    toggleFields();
+
+    // Add event listener for changes
+    workerTypeSelect.addEventListener('change', toggleFields);
+});
+</script>
+{% endblock %}
+

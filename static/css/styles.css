@@ -1,0 +1,199 @@
+/* General Styles */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --info-color: #17a2b8;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    
+    /* New Professional Palette */
+    --body-bg: #f7f9fc; /* A subtle, clean off-white */
+    --card-bg: #ffffff;
+    --text-color: #34495e;
+    --border-color: #e9ecef; /* Lighter border for a softer look */
+    --shadow-color: rgba(44, 62, 80, 0.07);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--body-bg);
+    line-height: 1.6;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    color: var(--primary-color);
+}
+
+/* Login Page Styles (Unchanged) */
+.login-body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.login-container { width: 100%; max-width: 400px; }
+.login-card { background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); }
+.login-header h2 { color: var(--primary-color); font-weight: 700; }
+
+/* Navigation Styles */
+.navbar {
+    box-shadow: 0 2px 4px var(--shadow-color);
+    background-color: var(--card-bg); /* Match card background for cohesion */
+}
+.navbar-brand { font-weight: 700; font-size: 1.5rem; }
+.dropdown-menu {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 0.5rem;
+}
+
+/* Card Styles - UPDATED */
+.card {
+    border: 1px solid var(--border-color); /* Subtle border like the example */
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px var(--shadow-color); /* Softer, more modern shadow */
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 1.5rem;
+    background-color: var(--card-bg);
+}
+.card:hover {
+    box-shadow: 0 5px 15px var(--shadow-color);
+    transform: translateY(-2px);
+}
+
+/* Stat card specific styles */
+.stat-card {
+    border-radius: 0.75rem; /* Match general card radius */
+    background-color: var(--card-bg) !important; /* Override bg-success, etc. */
+}
+/* Force text color to be dark, overriding 'text-white' class from HTML */
+.stat-card .card-title,
+.stat-card .card-body,
+.stat-card h2,
+.stat-card h5 {
+    color: var(--text-color) !important;
+}
+
+.card-header {
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Table Styles - PROFESSIONAL UPDATE */
+.table {
+    margin-bottom: 0;
+}
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: var(--body-bg); /* Match body for seamless look */
+    border-bottom: 2px solid var(--border-color);
+    border-top: none;
+    padding: 1rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-color); /* Ensure text color is correct */
+}
+.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: var(--body-bg); /* Use body background for stripes */
+}
+.table-hover tbody tr:hover td {   
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.2s ease;
+    border: none;
+}
+.btn-primary { background-color: var(--secondary-color); color: white; }
+.btn-success { background-color: var(--success-color); color: white; }
+.btn-warning { background-color: var(--warning-color); color: white; }
+.btn-danger { background-color: var(--danger-color); color: white; }
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 14px rgba(50, 50, 93, .1), 0 3px 6px rgba(0, 0, 0, .08);
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+.form-label { font-weight: 600; margin-bottom: 0.5rem; color: var(--dark-color); }
+
+/* Other Styles */
+.alert { border: none; border-radius: 8px; }
+.badge { font-weight: 500; padding: 6px 10px; border-radius: 6px; }
+footer { padding-top: 3rem; padding-bottom: 3rem; margin-top: auto; }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    h1 { font-size: 1.75rem; }
+    .table thead { display: none; }
+    .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+    .table tr { margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; }
+    .table td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .table tr td:last-child { border-bottom: none; }
+    .table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        width: 45%;
+        padding-right: 1rem;
+        text-align: left;
+        font-weight: bold;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .card:hover, .btn:hover, .stat-card:hover { transform: none; }
+}
+
