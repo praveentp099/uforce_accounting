@@ -38,7 +38,7 @@
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <h5>Total Expenses</h5>
-                <h2>${{ total_expenses|floatformat:2 }}</h2>
+                <h2>Đ{{ total_expenses|floatformat:2 }}</h2>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <h5>Total Wages</h5>
-                <h2>${{ total_wages|floatformat:2 }}</h2>
+                <h2>Đ{{ total_wages|floatformat:2 }}</h2>
             </div>
         </div>
     </div>
@@ -54,7 +54,7 @@
         <div class="card bg-info text-white">
             <div class="card-body text-center">
                 <h5>Grand Total</h5>
-                <h2>${{ grand_total|floatformat:2 }}</h2>
+                <h2>Đ{{ grand_total|floatformat:2 }}</h2>
             </div>
         </div>
     </div>
@@ -82,7 +82,7 @@
                             {% for category in expenses_by_category %}
                             <tr>
                                 <td>{{ category.expense_type }}</td>
-                                <td>${{ category.total|floatformat:2 }}</td>
+                                <td>Đ{{ category.total|floatformat:2 }}</td>
                                 <td>{{ category.total|floatformat:2 }}</td>
                             </tr>
                             {% endfor %}
@@ -119,7 +119,7 @@
                             <tr>
                                 <td>{{ expense.project.name|truncatewords:2 }}</td>
                                 <td>{{ expense.get_expense_type_display }}</td>
-                                <td>${{ expense.amount|floatformat:2 }}</td>
+                                <td>Đ{{ expense.amount|floatformat:2 }}</td>
                                 <td>{{ expense.description|truncatewords:3 }}</td>
                             </tr>
                             {% endfor %}
@@ -159,7 +159,7 @@
                         <td>{{ record.project.name }}</td>
                         <td>{{ record.hours_worked }}</td>
                         <td>{{ record.overtime_hours }}</td>
-                        <td>${{ record.total_wage|floatformat:2 }}</td>
+                        <td>Đ{{ record.total_wage|floatformat:2 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

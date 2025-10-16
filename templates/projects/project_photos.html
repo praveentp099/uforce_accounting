@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             formData.append('csrfmiddlewaretoken', csrfToken);
-            formData.append('image', blob, `capture-${new Date().toISOString()}.png`);
+            formData.append('image', blob, `capture-Đ{new Date().toISOString()}.png`);
             formData.append('caption', 'Captured from camera');
 
             fetch(window.location.href, {

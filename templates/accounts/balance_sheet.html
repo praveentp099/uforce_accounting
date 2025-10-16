@@ -11,15 +11,15 @@
                 <hr>
                 <dl class="row">
                     <dt class="col-sm-6">Current Assets</dt>
-                    <dd class="col-sm-6 text-end">${{ current_assets|floatformat:2 }}</dd>
+                    <dd class="col-sm-6 text-end">Đ{{ current_assets|floatformat:2 }}</dd>
                     
                     <dt class="col-sm-6">Fixed Assets</dt>
-                    <dd class="col-sm-6 text-end">${{ fixed_assets|floatformat:2 }}</dd>
+                    <dd class="col-sm-6 text-end">Đ{{ fixed_assets|floatformat:2 }}</dd>
                 </dl>
                 <hr>
                 <dl class="row">
                     <dt class="col-sm-6"><strong>Total Assets</strong></dt>
-                    <dd class="col-sm-6 text-end"><strong>${{ total_assets|floatformat:2 }}</strong></dd>
+                    <dd class="col-sm-6 text-end"><strong>Đ{{ total_assets|floatformat:2 }}</strong></dd>
                 </dl>
             </div>
 
@@ -30,21 +30,21 @@
                 <h5>Liabilities</h5>
                 <dl class="row">
                     <dt class="col-sm-6">Current Liabilities</dt>
-                    <dd class="col-sm-6 text-end">${{ current_liabilities|floatformat:2 }}</dd>
+                    <dd class="col-sm-6 text-end">Đ{{ current_liabilities|floatformat:2 }}</dd>
 
                     <dt class="col-sm-6">Long-Term Liabilities</dt>
-                    <dd class="col-sm-6 text-end">${{ long_term_liabilities|floatformat:2 }}</dd>
+                    <dd class="col-sm-6 text-end">Đ{{ long_term_liabilities|floatformat:2 }}</dd>
                 </dl>
                 <hr>
                 <h5>Equity</h5>
                 <dl class="row">
                     <dt class="col-sm-6">Owner's Equity</dt>
-                    <dd class="col-sm-6 text-end">${{ equity|floatformat:2 }}</dd>
+                    <dd class="col-sm-6 text-end">Đ{{ equity|floatformat:2 }}</dd>
                 </dl>
                 <hr>
                 <dl class="row">
                     <dt class="col-sm-6"><strong>Total Liabilities & Equity</strong></dt>
-                    <dd class="col-sm-6 text-end"><strong>${{ total_liabilities_equity|floatformat:2 }}</strong></dd>
+                    <dd class="col-sm-6 text-end"><strong>Đ{{ total_liabilities_equity|floatformat:2 }}</strong></dd>
                 </dl>
             </div>
         </div>

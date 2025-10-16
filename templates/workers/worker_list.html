@@ -11,6 +11,26 @@
     {% endif %}
 </div>
 
+<!-- Filter Navigation -->
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if not current_filter %}active{% endif %}" href="{% url 'worker_list' %}">
+            All Workers <span class="badge bg-secondary">{{ counts.all }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if current_filter == 'own' %}active{% endif %}" href="?type=own">
+            Own Workers <span class="badge bg-light text-dark">{{ counts.own }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if current_filter == 'outsourced' %}active{% endif %}" href="?type=outsourced">
+            Outsourced Workers <span class="badge bg-light text-dark">{{ counts.outsourced }}</span>
+        </a>
+    </li>
+</ul>
+
+<!-- Unified Worker Table -->
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
@@ -19,6 +39,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Type</th>
+                        <th>Group / Leader</th>
                         <th>Wage Info</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -27,32 +48,42 @@
                 <tbody>
                     {% for worker in workers %}
                     <tr>
-                        <td><strong>{{ worker.name }}</strong></td>
-                        <td><span class="badge bg-{% if worker.worker_type == 'own' %}primary{% else %}secondary{% endif %}">{{ worker.get_worker_type_display }}</span></td>
-                        <td>
-                            {% if worker.worker_type == 'own' %}
-                                ${{ worker.fixed_wage|floatformat:2 }}/month
+                        <td data-label="Name"><strong>{{ worker.name }}</strong></td>
+                        <td data-label="Type"><span class="badge bg-{% if worker.worker_type == 'own' %}primary{% else %}secondary{% endif %}">{{ worker.get_worker_type_display }}</span></td>
+                        <td data-label="Group / Leader">
+                            {% if worker.worker_type == 'outsourced' %}
+                                {{ worker.group.name|default:"N/A" }}
+                                <br><small class="text-muted">Leader: {{ worker.group.leader.name|default:"N/A" }}</small>
                             {% else %}
-                                ${{ worker.daily_wage|floatformat:2 }}/day
+                                <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
-                        <td><span class="badge bg-{% if worker.is_active %}success{% else %}danger{% endif %}">{% if worker.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-                        <td>
-                            {% if user|has_role:'admin,owner,supervisor' %}
-                            <a href="{% url 'worker_update' worker.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <td data-label="Wage Info">
+                            {% if worker.worker_type == 'own' %}
+                                AED {{ worker.fixed_wage|floatformat:2 }}/month
+                            {% else %}
+                                AED {{ worker.daily_wage|floatformat:2 }}/day
                             {% endif %}
-                            {% if user|has_role:'admin,owner' %}
-                            <form action="{% url 'worker_toggle_active' worker.id %}" method="post" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm {% if worker.is_active %}btn-danger{% else %}btn-success{% endif %}">
-                                    <i class="fas {% if worker.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
-                                </button>
-                            </form>
-                            {% endif %}
+                        </td>
+                        <td data-label="Status"><span class="badge bg-{% if worker.is_active %}success{% else %}danger{% endif %}">{% if worker.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                        <td data-label="Actions">
+                            <div class="btn-group">
+                                {% if user|has_role:'admin,owner,supervisor' %}
+                                <a href="{% url 'worker_update' worker.id %}" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                {% endif %}
+                                {% if user|has_role:'admin,owner' %}
+                                <form action="{% url 'worker_toggle_active' worker.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if worker.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if worker.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fas {% if worker.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted">No workers found.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">No workers found for this filter.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -60,3 +91,4 @@
     </div>
 </div>
 {% endblock %}
+

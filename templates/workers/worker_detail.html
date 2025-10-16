@@ -51,7 +51,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between">
         <h5 class="mb-0">Attendance Records</h5>
-        <span class="fw-bold">Total Wage for Period: ${{ totals.total_wages|default:0|floatformat:2 }}</span>
+        <span class="fw-bold">Total Wage for Period: Đ{{ totals.total_wages|default:0|floatformat:2 }}</span>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -76,7 +76,7 @@
                         <td data-label="Out Time">{{ record.out_time|time:"H:i" }}</td>
                         <td data-label="Hours">{{ record.hours_worked|floatformat:2 }}</td>
                         <td data-label="Overtime">{{ record.overtime_hours|floatformat:2 }}</td>
-                        <td data-label="Wage" class="text-end">${{ record.total_wage|floatformat:2 }}</td>
+                        <td data-label="Wage" class="text-end">Đ{{ record.total_wage|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -90,7 +90,7 @@
                         <td colspan="4" class="text-end">Period Totals:</td>
                         <td>{{ totals.total_hours|default:0|floatformat:2 }}</td>
                         <td>{{ totals.total_overtime|default:0|floatformat:2 }}</td>
-                        <td class="text-end">${{ totals.total_wages|default:0|floatformat:2 }}</td>
+                        <td class="text-end">Đ{{ totals.total_wages|default:0|floatformat:2 }}</td>
                     </tr>
                 </tfoot>
                 {% endif %}

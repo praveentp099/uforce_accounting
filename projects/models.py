@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q, Sum
 from django.utils import timezone
-
+from django.urls import reverse 
 from workers.models import WorkerAttendance
 
 class ProjectManager(models.Manager):
@@ -52,6 +52,13 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        """
+        Returns the canonical URL for a project instance.
+        This is the method that was missing.
+        """
+        return reverse('project_detail', kwargs={'pk': self.pk})
+
     def update_progress(self):
         """
         Calculates the project progress based on the ratio of completed tasks.
@@ -77,9 +84,6 @@ class Project(models.Model):
 
 
 class Task(models.Model):
-    """
-    Represents a single task within a project, now with a start date.
-    """
     STATUS_CHOICES = (
         ('todo', 'To Do'),
         ('in_progress', 'In Progress'),
@@ -88,11 +92,14 @@ class Task(models.Model):
     project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True)
-    start_date = models.DateField(null=True, blank=True) # New field
+    start_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    
+    # New field for task-specific client comments
+    client_comments = models.TextField(blank=True, help_text="Client feedback specific to this task.")
+    
     completion_notes = models.TextField(blank=True, help_text="Reason if the task was not completed on the due date.")
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -103,12 +110,42 @@ class Task(models.Model):
 
     @property
     def is_overdue(self):
-        """
-        Returns True if the task's due date is in the past and it is not yet completed.
-        """
         if self.due_date and self.due_date < timezone.now().date() and self.status != 'completed':
             return True
         return False
+
+class TaskPhoto(models.Model):
+    """
+    Represents a single photo uploaded for a specific task.
+    """
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField(upload_to='task_photos/')
+    caption = models.CharField(max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Photo for task '{self.task.title}'"
+    
+class ProjectDocument(models.Model):
+    """
+    Represents a single document (e.g., PDF) uploaded for a project.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents')
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to='project_documents/')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
 
 class ProjectExpense(models.Model):
     """

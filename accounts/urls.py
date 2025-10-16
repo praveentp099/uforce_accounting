@@ -15,4 +15,13 @@ urlpatterns = [
     
     # This is the URL for the selected view function
     path('payables/group/<int:group_id>/pay/', views.group_pay_all_view, name='group_pay_all'),
+    path('materials/', views.material_list_view, name='material_list'),
+    path('materials/create/', views.material_create_view, name='material_create'),
+    path('materials/<int:pk>/update/', views.material_update_view, name='material_update'),
+    path('materials/<int:pk>/delete/', views.material_delete_view, name='material_delete'),
+    # Invoice URLs
+    path('invoices/', views.invoice_list_view, name='invoice_list'),
+    path('invoices/create/', views.invoice_create_view, name='invoice_create'),
+    path('invoices/<int:pk>/', views.invoice_detail_view, name='invoice_detail'),
+    path('invoices/<int:pk>/update/', views.invoice_update_view, name='invoice_update'),
 ]

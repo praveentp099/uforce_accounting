@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, ProjectExpense, Task, ProjectPhoto
+from .models import Project, ProjectExpense, Task, ProjectPhoto, TaskPhoto, ProjectDocument
 
 class ProjectForm(forms.ModelForm):
     """
@@ -20,6 +20,14 @@ class ProjectForm(forms.ModelForm):
             'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
+class ProjectDocumentForm(forms.ModelForm):
+    """
+    A form for uploading new project documents.
+    """
+    class Meta:
+        model = ProjectDocument
+        fields = ['title', 'file']
+
 class TaskForm(forms.ModelForm):
     """
     A form for creating new tasks, now including the start_date.
@@ -34,18 +42,25 @@ class TaskForm(forms.ModelForm):
         }
 
 class TaskUpdateForm(forms.ModelForm):
-    """
-    A new, separate form for EDITING existing tasks.
-    """
+    """ A new, separate form for EDITING existing tasks. """
     class Meta:
         model = Task
-        fields = ['title', 'description', 'start_date', 'due_date', 'status', 'completion_notes']
+        fields = ['title', 'description', 'start_date', 'due_date', 'status', 'client_comments', 'completion_notes']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+            'client_comments': forms.Textarea(attrs={'rows': 3}),
             'completion_notes': forms.Textarea(attrs={'rows': 3}),
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class TaskPhotoForm(forms.ModelForm):
+    """
+    A new form for uploading photos related to a specific task.
+    """
+    class Meta:
+        model = TaskPhoto
+        fields = ['image', 'caption']
 
 class ProjectExpenseForm(forms.ModelForm):
     class Meta:

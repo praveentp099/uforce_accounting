@@ -11,7 +11,7 @@
 
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">Total Unpaid Wages: ${{ total_unpaid|floatformat:2 }}</h5>
+        <h5 class="mb-0">Total Unpaid Wages: Đ{{ total_unpaid|floatformat:2 }}</h5>
     </div>
     <div class="card-body">
         <div class="list-group">
@@ -21,7 +21,7 @@
                         <h5 class="mb-1">Leader: {{ group.leader.name|default:"N/A" }}</h5>
                         <p class="mb-1 text-muted">Group: {{ group.name }}</p>
                     </div>
-                    <span class="badge bg-danger rounded-pill fs-6">${{ total|floatformat:2 }}</span>
+                    <span class="badge bg-danger rounded-pill fs-6">Đ{{ total|floatformat:2 }}</span>
                 </a>
             {% empty %}
                 <div class="text-center text-muted py-5">

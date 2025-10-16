@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Task: {{ task.title }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-check-square"></i> {{ task.title }}</h1>
+        <h5 class="text-muted">Part of Project: <a href="{% url 'project_detail' task.project.pk %}">{{ task.project.name }}</a></h5>
+    </div>
+    <a href="{% url 'project_detail' task.project.pk %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Project</a>
+</div>
+
+<div class="row">
+    <!-- Task Details -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Task Details</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#taskModal"
+                    onclick="openTaskModal('{% url 'task_update' task.pk %}', 'Edit Task: {{ task.title|escapejs }}')">
+                    <i class="fas fa-edit"></i> Edit Full Task
+                </button>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong> {{ task.get_status_display }} {% if task.is_overdue %}<span class="badge bg-danger">Due</span>{% endif %}</p>
+                <p><strong>Start Date:</strong> {{ task.start_date|default:"N/A" }}</p>
+                <p><strong>Due Date:</strong> {{ task.due_date|default:"N/A" }}</p>
+                <hr>
+                <h6>Description:</h6>
+                <p>{{ task.description|linebreaksbr|default:"N/A" }}</p>
+                <hr>
+
+                <!-- In-place edit for Client Comments -->
+                <div id="client-comments-display">
+                    <h6>Client Comments <button class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" onclick="toggleEdit('client-comments')"><i class="fas fa-pencil-alt"></i></button></h6>
+                    <p class="text-muted fst-italic">{{ task.client_comments|linebreaksbr|default:"No client comments have been added." }}</p>
+                </div>
+                <div id="client-comments-edit" style="display:none;">
+                    <form method="post" action="{% url 'task_update_notes' task.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="field" value="client_comments">
+                        <h6>Edit Client Comments</h6>
+                        <textarea name="content" class="form-control mb-2" rows="3">{{ task.client_comments }}</textarea>
+                        <button type="submit" class="btn btn-sm btn-primary">Save Comments</button>
+                        <button type="button" class="btn btn-sm btn-light" onclick="toggleEdit('client-comments')">Cancel</button>
+                    </form>
+                </div>
+                <hr>
+
+                <!-- In-place edit for Completion Notes -->
+                <div id="completion-notes-display">
+                    <h6>Completion Notes (Reason for delay) <button class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" onclick="toggleEdit('completion-notes')"><i class="fas fa-pencil-alt"></i></button></h6>
+                    <p class="text-muted fst-italic">{{ task.completion_notes|linebreaksbr|default:"No completion notes have been added." }}</p>
+                </div>
+                <div id="completion-notes-edit" style="display:none;">
+                    <form method="post" action="{% url 'task_update_notes' task.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="field" value="completion_notes">
+                        <h6>Edit Completion Notes</h6>
+                        <textarea name="content" class="form-control mb-2" rows="3">{{ task.completion_notes }}</textarea>
+                        <button type="submit" class="btn btn-sm btn-primary">Save Notes</button>
+                        <button type="button" class="btn btn-sm btn-light" onclick="toggleEdit('completion-notes')">Cancel</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Photo -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header"><h5><i class="fas fa-camera"></i> Add Photo to this Task</h5></div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_photo" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">{{ photo_form.image.label }}</label>
+                        {% render_field photo_form.image class="form-control" %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ photo_form.caption.label }}</label>
+                        {% render_field photo_form.caption class="form-control" %}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Upload Photo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Photo Gallery -->
+<div class="card">
+    <div class="card-header"><h5>Task Photos</h5></div>
+    <div class="card-body">
+        <div class="row">
+            {% for photo in photos %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card h-100">
+                    <img src="{{ photo.image.url }}" class="card-img-top" style="object-fit: cover; height: 200px;" alt="{{ photo.caption }}">
+                    <div class="card-body"><p class="card-text">{{ photo.caption }}</p></div>
+                    <div class="card-footer text-muted"><small>By {{ photo.uploaded_by.username }} on {{ photo.created_at|date:"Y-m-d" }}</small></div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No photos have been uploaded for this task yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Task Edit Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalLabel">Edit Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe id="taskModalFrame" src="about:blank" style="width: 100%; height: 500px; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// For the full task edit modal
+function openTaskModal(url, title) {
+    document.getElementById('taskModalLabel').innerText = title;
+    document.getElementById('taskModalFrame').src = url;
+}
+window.addEventListener('message', function(event) {
+    if (event.data === 'taskUpdated') {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
+        if (modal) { modal.hide(); }
+        location.reload();
+    }
+});
+
+// New function for in-place editing
+function toggleEdit(section) {
+    const displayDiv = document.getElementById(section + '-display');
+    const editDiv = document.getElementById(section + '-edit');
+    if (displayDiv.style.display === 'none') {
+        displayDiv.style.display = 'block';
+        editDiv.style.display = 'none';
+    } else {
+        displayDiv.style.display = 'none';
+        editDiv.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}
+

@@ -31,7 +31,7 @@
                                 {{ trans.get_transaction_type_display }}
                             </span>
                         </td>
-                        <td>${{ trans.amount|floatformat:2 }}</td>
+                        <td>Đ{{ trans.amount|floatformat:2 }}</td>
                         <td>{{ trans.description|truncatewords:8 }}</td>
                         <td>{{ trans.project.name|default:"N/A" }}</td>
                         <td>{{ trans.created_by.username }}</td>

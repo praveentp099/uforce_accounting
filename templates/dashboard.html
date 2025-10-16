@@ -5,90 +5,107 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-folder-plus"></i> Dashboard</h1>
-            <span class="text-muted">Welcome back, {{ user.get_full_name|default:user.username }}!</span>
+            <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+            <span class="text-muted">Hi, {{ user.get_full_name|default:user.username }}!</span>
         </div>
     </div>
 </div>
 
 <!-- Main Statistics Cards -->
 <div class="row mb-4">
-    <!-- Total Bank Balance -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{% url 'account_list' %}?type=asset" class="text-decoration-none">
-            <div class="card stat-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Bank Balance</h5>
-                            <h2 class="mb-0">${{ total_bank_balance|floatformat:2 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-university fa-3x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Pending Invoices (Receivables) -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{% url 'account_list' %}?type=receivable" class="text-decoration-none">
-            <div class="card stat-card bg-warning text-dark">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Pending Invoices</h5>
-                            <h2 class="mb-0">${{ pending_invoices_total|floatformat:2 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-file-invoice-dollar fa-3x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Accounts Payable (Credit) -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{% url 'payable_list' %}" class="text-decoration-none">
-            <div class="card stat-card bg-danger text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">To Be Paid</h5>
-                            <h2 class="mb-0">${{ total_credit_due|floatformat:2 }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-hand-holding-usd fa-3x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
     <!-- Active Projects -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{% url 'project_list' %}" class="text-decoration-none">
-            <div class="card stat-card bg-primary text-white">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{% url 'project_list' %}" class="text-decoration-none h-100">
+            <div class="card stat-card h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Active Projects</h5>
-                            <h2 class="mb-0">{{ active_projects_count }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-project-diagram fa-3x"></i>
-                        </div>
+                    <h5 class="card-title text-primary">Active Projects</h5>
+                    <h2 class="mb-0 display-5">{{ active_projects_count }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Completed Projects -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{% url 'project_list' %}" class="text-decoration-none h-100">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Completed Projects</h5>
+                    <h2 class="mb-0 display-5">{{ completed_projects_count }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Total Workers -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{% url 'worker_list' %}" class="text-decoration-none h-100">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-info">Total Workers</h5>
+                    <h2 class="mb-0 display-5">{{ total_workers }}</h2>
+                    <div class="d-flex justify-content-between mt-2">
+                        <span class="badge bg-light text-dark">Own: {{ own_workers }}</span>
+                        <span class="badge bg-light text-dark">Outsourced: {{ outsourced_workers }}</span>
                     </div>
                 </div>
             </div>
         </a>
     </div>
 </div>
+
+<!-- Financial Statistics Cards -->
+<div class="row mb-4">
+    <!-- Pending Invoices (New Card) -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <a href="{% url 'invoice_list' %}?type=receivable" class="text-decoration-none h-100">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Pending Invoices</h5>
+                    <h2 class="mb-0 display-5">AED {{ pending_invoices_total|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- To Be Paid -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <a href="{% url 'payable_list' %}" class="text-decoration-none h-100">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">To Be Paid</h5>
+                    <h2 class="mb-0 display-5">AED {{ total_credit_due|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+<!-- Photo Upload Alert -->
+{% if projects_missing_photos %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Action Required: Daily Photos Needed</h5>
+            </div>
+            <div class="card-body">
+                <p>The following active projects are missing photo uploads for today ({{ "now"|date:"Y-m-d" }}):</p>
+                <div class="list-group">
+                    {% for project in projects_missing_photos %}
+                        <a href="{% url 'project_photos' project.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <strong>{{ project.name }}</strong>
+                            <span class="btn btn-sm btn-primary">Upload Photos</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 
 <!-- Charts and Recent Activity -->
 <div class="row">
@@ -122,7 +139,7 @@
                             <small class="d-block text-muted">{{ trans.date }} | {{ trans.account.name }}</small>
                         </div>
                         <span class="badge bg-{% if trans.transaction_type == 'credit' %}success{% else %}danger{% endif %} rounded-pill">
-                            {% if trans.transaction_type == 'credit' %}+{% else %}-{% endif %} ${{ trans.amount|floatformat:2 }}
+                            {% if trans.transaction_type == 'credit' %}+{% else %}-{% endif %} AED {{ trans.amount|floatformat:2 }}
                         </span>
                     </li>
                     {% endfor %}

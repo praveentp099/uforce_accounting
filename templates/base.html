@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}UForce{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
@@ -27,6 +28,11 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'project_list' %}"><i class="fas fa-project-diagram"></i> Projects</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'worker_list' %}"><i class="fas fa-users"></i> Workers</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'attendance_list' %}"><i class="fas fa-clipboard-check"></i> Attendance</a></li>
+                    
+                    <!-- Added Materials and Files Links -->
+                    <li class="nav-item"><a class="nav-link" href="{% url 'material_list' %}"><i class="fas fa-boxes-stacked"></i> Materials</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'quotation_list' %}"><i class="fas fa-file-invoice"></i> Files</a></li>
+                    
                     {% if user|has_role:'admin,owner' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'reports_dashboard' %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_list' %}"><i class="fas fa-user-cog"></i> Users</a></li>
@@ -35,10 +41,14 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user"></i> {{ user.username }} ({{ user.get_role_display }})
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            {% if user|has_role:'admin,owner' %}
+                            <li><a class="dropdown-item" href="{% url 'account_list' %}"><i class="fas fa-university"></i> Manage Accounts</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                         </ul>
                     </li>
@@ -74,3 +84,4 @@
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+

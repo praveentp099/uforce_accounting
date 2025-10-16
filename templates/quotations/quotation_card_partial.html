@@ -1,0 +1,29 @@
+{% load auth_extras %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">{{ quotation.title }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{ quotation.client_name }}</h6>
+        <small class="d-block text-muted">Uploaded by {{ quotation.uploaded_by.username }}</small>
+        <div class="mt-3">
+            <a href="{{ quotation.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
+            {% if user|has_role:'admin,owner' %}
+            <div class="btn-group dropend">
+                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    Move to
+                </button>
+                <ul class="dropdown-menu">
+                    {% if quotation.status != 'pending' %}
+                    <li><form method="post" action="{% url 'quotation_update_status' quotation.pk 'pending' %}">{% csrf_token %}<button type="submit" class="dropdown-item">Pending</button></form></li>
+                    {% endif %}
+                    {% if quotation.status != 'approved' %}
+                    <li><form method="post" action="{% url 'quotation_update_status' quotation.pk 'approved' %}">{% csrf_token %}<button type="submit" class="dropdown-item">Approved</button></form></li>
+                    {% endif %}
+                    {% if quotation.status != 'revised' %}
+                    <li><form method="post" action="{% url 'quotation_update_status' quotation.pk 'revised' %}">{% csrf_token %}<button type="submit" class="dropdown-item">Revised</button></form></li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

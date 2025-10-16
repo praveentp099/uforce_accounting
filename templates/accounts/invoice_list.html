@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+{% block title %}Invoices | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-invoice-dollar"></i> Invoices</h1>
+    {% if user|has_role:'admin,owner' %}
+    <a href="{% url 'invoice_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Invoice</a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-end">Amount Received</th>
+                        <th class="text-end">Balance Due</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td><a href="{% url 'project_detail' invoice.project.pk %}">{{ invoice.project.name }}</a></td>
+                        <td><a href="{{ invoice.get_absolute_url }}"><strong>{{ invoice.title }}</strong></a></td>
+                        <td>{{ invoice.issue_date }}</td>
+                        <td class="text-end">AED {{ invoice.total_amount|floatformat:2 }}</td>
+                        <td class="text-end">AED {{ invoice.amount_received|floatformat:2 }}</td>
+                        <td class="text-end fw-bold">AED {{ invoice.balance_due|floatformat:2 }}</td>
+                        <td>
+                            {% if invoice.is_paid %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No invoices found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,11 +1,11 @@
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import CustomUser,Account,Transaction,GroupPayment 
+from .models import CustomUser,Account,Transaction,GroupPayment, Material
 from workers.models import Worker, WorkerAttendance, OutsourcedGroup
 from projects.models import Project, ProjectExpense
-from .forms import CustomUserCreationForm, CustomUserChangeForm, AccountForm
-from django.db.models import Sum, Count, Case, When, DecimalField, Q
+from .forms import CustomUserCreationForm, CustomUserChangeForm, AccountForm, MaterialForm
+from django.db.models import Sum, Count, Case, When, DecimalField, Q, F
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth import login, logout
@@ -15,6 +15,8 @@ from django.db.models.functions import TruncMonth
 from datetime import date, datetime
 from decimal import Decimal
 from django.db import transaction
+from .models import Invoice, InvoicePayment, Account, Transaction
+from .forms import InvoiceForm, InvoicePaymentForm
 
 # --- Reusable Permission Checker ---
 def is_admin_or_owner(user):
@@ -45,34 +47,47 @@ def role_check(role_list):
 def dashboard_view(request):
     today = date.today()
     
-    # Financial Account Summaries
-    total_bank_balance = Account.objects.aggregate(total=Sum('balance'))['total'] or 0
-    pending_invoices_total = Account.objects.filter(account_type='receivable').aggregate(total=Sum('balance'))['total'] or 0
+    # Financial Summaries (including Pending Invoices)
+    pending_invoices = Invoice.objects.annotate(
+        amount_received=Sum('payments__amount', default=0, output_field=DecimalField())
+    ).filter(total_amount__gt=F('amount_received'))
+    
+    pending_invoices_total = pending_invoices.aggregate(
+        total_due=Sum(F('total_amount') - F('amount_received'))
+    )['total_due'] or 0
     total_credit_due = Account.objects.filter(account_type='liability').aggregate(total=Sum('balance'))['total'] or 0
-
-    # Calculate Unpaid Worker Wages
-    unpaid_wages = WorkerAttendance.objects.filter(is_paid=False).aggregate(total=Sum('total_wage'))['total'] or 0
+    unpaid_wages = WorkerAttendance.objects.filter(is_paid=False, worker__worker_type='outsourced').aggregate(total=Sum('total_wage'))['total'] or 0
     total_payable = total_credit_due + unpaid_wages
 
-    active_projects_count = Project.objects.filter_for_user(request.user).filter(status='active').count()
-    recent_transactions = Transaction.objects.select_related('account').order_by('-date')[:5]
+    # Project and Worker Counts
+    projects_qs = Project.objects.filter_for_user(request.user)
+    active_projects_count = projects_qs.filter(status='active').count()
+    completed_projects_count = projects_qs.filter(status='completed').count()
+    worker_counts = Worker.objects.filter(is_active=True).aggregate(
+        total_workers=Count('id'),
+        own_workers=Count('id', filter=Q(worker_type='own')),
+        outsourced_workers=Count('id', filter=Q(worker_type='outsourced'))
+    )
 
-    # Monthly Cash Flow Chart Data
+    # Recent Transactions & Chart Data
+    recent_transactions = Transaction.objects.select_related('account').order_by('-date')[:5]
     six_months_ago = today - timedelta(days=180)
     monthly_income = Transaction.objects.filter(date__gte=six_months_ago, transaction_type='credit').annotate(month=TruncMonth('date')).values('month').annotate(total=Sum('amount')).order_by('month')
     monthly_expenses = Transaction.objects.filter(date__gte=six_months_ago, transaction_type='debit').annotate(month=TruncMonth('date')).values('month').annotate(total=Sum('amount')).order_by('month')
-
+    
     chart_data = defaultdict(lambda: {'income': 0, 'expenses': 0})
     for item in monthly_income: chart_data[item['month'].strftime('%b %Y')]['income'] = float(item['total'])
     for item in monthly_expenses: chart_data[item['month'].strftime('%b %Y')]['expenses'] = float(item['total'])
-    
     sorted_chart_data = sorted(chart_data.items(), key=lambda x: datetime.strptime(x[0], '%b %Y'))
 
     context = {
-        'total_bank_balance': total_bank_balance,
         'pending_invoices_total': pending_invoices_total,
         'total_credit_due': total_payable,
         'active_projects_count': active_projects_count,
+        'completed_projects_count': completed_projects_count,
+        'total_workers': worker_counts['total_workers'],
+        'own_workers': worker_counts['own_workers'],
+        'outsourced_workers': worker_counts['outsourced_workers'],
         'recent_transactions': recent_transactions,
         'chart_labels': json.dumps([item[0] for item in sorted_chart_data]),
         'chart_income_values': json.dumps([item[1]['income'] for item in sorted_chart_data]),
@@ -241,9 +256,9 @@ def group_payment_detail_view(request, group_id):
                 if pks_to_pay:
                     # 3. Perform a bulk update on the records that were fully covered.
                     WorkerAttendance.objects.filter(pk__in=pks_to_pay).update(is_paid=True)
-                    messages.success(request, f"Payment of ${amount_paid} recorded. ${amount_covered} of this was applied to clear the oldest unpaid wages.")
+                    messages.success(request, f"Payment of Đ{amount_paid} recorded. Đ{amount_covered} of this was applied to clear the oldest unpaid wages.")
                 else:
-                    messages.info(request, f"Payment of ${amount_paid} recorded. This amount was not enough to clear any specific daily wages, but your bank balance has been updated.")
+                    messages.info(request, f"Payment of Đ{amount_paid} recorded. This amount was not enough to clear any specific daily wages, but your bank balance has been updated.")
 
             return redirect('group_payment_detail', group_id=group.id)
 
@@ -353,3 +368,150 @@ def account_update_view(request, pk):
     else:
         form = AccountForm(instance=account)
     return render(request, 'accounts/account_form.html', {'form': form, 'title': f'Edit Account: {account.name}'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def material_list_view(request):
+    """
+    Displays a list of all materials in the inventory.
+    """
+    materials = Material.objects.all()
+    return render(request, 'accounts/material_list.html', {'materials': materials})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def material_create_view(request):
+    """
+    Handles the creation of a new material using material_form.html.
+    """
+    if request.method == 'POST':
+        form = MaterialForm(request.POST)
+        if form.is_valid():
+            material = form.save(commit=False)
+            # Ensure quantity on hand matches initial quantity on creation
+            material.quantity_on_hand = material.initial_quantity
+            material.save()
+            messages.success(request, f'Material "{material.name}" added to inventory.')
+            return redirect('material_list')
+    else:
+        form = MaterialForm()
+    return render(request, 'accounts/material_form.html', {'form': form, 'title': 'Add New Material'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def material_update_view(request, pk):
+    """
+    Handles the editing of an existing material using material_form.html.
+    """
+    material = get_object_or_404(Material, pk=pk)
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, instance=material)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Material "{material.name}" updated successfully.')
+            return redirect('material_list')
+    else:
+        form = MaterialForm(instance=material)
+    return render(request, 'accounts/material_form.html', {'form': form, 'title': f'Edit Material: {material.name}'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def material_delete_view(request, pk):
+    """
+    Handles the deletion of a material.
+    """
+    material = get_object_or_404(Material, pk=pk)
+    if request.method == 'POST':
+        material_name = material.name
+        material.delete()
+        messages.success(request, f'Material "{material_name}" has been deleted.')
+    return redirect('material_list')
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def invoice_list_view(request):
+    """ Displays a list of all invoices. """
+    invoices = Invoice.objects.select_related('project').all()
+    return render(request, 'accounts/invoice_list.html', {'invoices': invoices})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def invoice_create_view(request):
+    """
+    Handles the creation of a new invoice. This view renders the form in your Canvas.
+    """
+    if request.method == 'POST':
+        form = InvoiceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Invoice created successfully.')
+            return redirect('invoice_list')
+    else:
+        form = InvoiceForm()
+    return render(request, 'accounts/invoice_form.html', {'form': form, 'title': 'Create New Invoice'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def invoice_detail_view(request, pk):
+    """
+    Displays details for a single invoice and handles recording new payments.
+    """
+    invoice = get_object_or_404(Invoice.objects.select_related('project'), pk=pk)
+    
+    if request.method == 'POST':
+        payment_form = InvoicePaymentForm(request.POST)
+        if payment_form.is_valid():
+            # Find a bank account to deposit the payment into
+            bank_account = Account.objects.filter(account_type='asset').first()
+            if not bank_account:
+                messages.error(request, "Payment failed: No 'Asset' account found to receive the payment. Please create one.")
+                return redirect('invoice_detail', pk=invoice.pk)
+
+            with transaction.atomic():
+                # 1. Save the payment record for the invoice
+                payment = payment_form.save(commit=False)
+                payment.invoice = invoice
+                payment.created_by = request.user
+                payment.save()
+
+                # 2. Create a financial transaction to increase the bank balance
+                # A payment RECEIVED into an Asset account is a DEBIT.
+                Transaction.objects.create(
+                    account=bank_account,
+                    transaction_type='debit',
+                    amount=payment.amount,
+                    date=payment.payment_date,
+                    description=f"Payment received for invoice: {invoice.title}",
+                    created_by=request.user
+                )
+            
+            messages.success(request, 'Payment recorded and bank balance updated.')
+            return redirect('invoice_detail', pk=invoice.pk)
+        else:
+            # If the form is invalid, an error message will now be shown
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        payment_form = InvoicePaymentForm()
+
+    context = {
+        'invoice': invoice,
+        'payment_form': payment_form,
+    }
+    return render(request, 'accounts/invoice_detail.html', context)
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def invoice_update_view(request, pk):
+    """
+    Handles the editing of an existing invoice. This is the view you requested.
+    """
+    invoice = get_object_or_404(Invoice, pk=pk)
+    if request.method == 'POST':
+        form = InvoiceForm(request.POST, instance=invoice)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Invoice updated successfully.')
+            return redirect('invoice_list')
+    else:
+        form = InvoiceForm(instance=invoice)
+    return render(request, 'accounts/invoice_form.html', {'form': form, 'title': f'Edit Invoice: {invoice.title}'})

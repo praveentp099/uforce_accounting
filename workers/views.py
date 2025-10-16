@@ -5,14 +5,41 @@ from .models import Worker, WorkerAttendance
 from .forms import WorkerForm, WorkerAttendanceForm
 from accounts.views import is_admin_or_owner, can_manage_projects, can_add_attendance
 from projects.models import Project
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from datetime import date
 from calendar import monthrange
 
 @login_required
 def worker_list_view(request):
-    workers = Worker.objects.all().order_by('name')
-    return render(request, 'workers/worker_list.html', {'workers': workers})
+    """
+    Displays a list of active workers that can be filtered by type.
+    """
+    # Get the base queryset of all active workers
+    base_workers = Worker.objects.filter(is_active=True)
+
+    # Get the type filter from the URL query parameter (e.g., ?type=own)
+    type_filter = request.GET.get('type')
+
+    # Efficiently calculate the count for each category
+    counts = base_workers.aggregate(
+        all=Count('id'),
+        own=Count('id', filter=Q(worker_type='own')),
+        outsourced=Count('id', filter=Q(worker_type='outsourced'))
+    )
+
+    # Filter the workers to be displayed in the table
+    if type_filter in ['own', 'outsourced']:
+        display_workers = base_workers.filter(worker_type=type_filter)
+    else:
+        # If no filter is applied, show all workers
+        display_workers = base_workers
+
+    context = {
+        'workers': display_workers.select_related('group', 'group__leader').order_by('name'),
+        'counts': counts,
+        'current_filter': type_filter,
+    }
+    return render(request, 'workers/worker_list.html', context)
 
 @login_required
 def attendance_list_view(request):

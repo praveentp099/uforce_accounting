@@ -26,7 +26,7 @@
                     <tr>
                         <td>{{ account.name }}</td>
                         <td>{{ account.get_account_type_display }}</td>
-                        <td>${{ account.balance|floatformat:2 }}</td>
+                        <td>Đ{{ account.balance|floatformat:2 }}</td>
                         <td>
                              {% if user|has_role:'admin,owner' %}
                             <a href="{% url 'account_edit' account.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>

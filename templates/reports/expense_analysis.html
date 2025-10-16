@@ -47,7 +47,7 @@
                         {% for category in top_categories %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 {{ category.name }}
-                                <span class="badge bg-primary rounded-pill">${{ category.total|floatformat:2 }}</span>
+                                <span class="badge bg-primary rounded-pill">Đ{{ category.total|floatformat:2 }}</span>
                             </li>
                         {% empty %}
                             <li class="list-group-item text-muted">No expenses in this period.</li>
@@ -64,7 +64,7 @@
                          {% for name, total in top_projects %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 {{ name }}
-                                <span class="badge bg-danger rounded-pill">${{ total|floatformat:2 }}</span>
+                                <span class="badge bg-danger rounded-pill">Đ{{ total|floatformat:2 }}</span>
                             </li>
                         {% empty %}
                             <li class="list-group-item text-muted">No project costs in this period.</li>
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     y: { 
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) { return '$' + value.toLocaleString(); }
+                            callback: function(value) { return 'Đ' + value.toLocaleString(); }
                         }
                     },
                 },

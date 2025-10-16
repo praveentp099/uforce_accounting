@@ -29,7 +29,7 @@
                         <td>{{ expense.date }}</td>
                         <td><a href="{% url 'project_detail' expense.project.id %}">{{ expense.project.name }}</a></td>
                         <td>{{ expense.get_expense_type_display }}</td>
-                        <td>${{ expense.amount|floatformat:2 }}</td>
+                        <td>Đ{{ expense.amount|floatformat:2 }}</td>
                         <td>{{ expense.description|truncatewords:10 }}</td>
                         <td>{{ expense.recorded_by.username }}</td>
                     </tr>
