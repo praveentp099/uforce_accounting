@@ -38,7 +38,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'worker_list' %}"><i class="fas fa-users"></i> Workers</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'attendance_list' %}"><i class="fas fa-clipboard-check"></i> Attendance</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'material_list' %}"><i class="fas fa-boxes-stacked"></i> Materials</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'quotation_list' %}"><i class="fas fa-file-invoice"></i> Files</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'quotation_list' %}"><i class="fas fa-file-invoice"></i> Quotations</a></li>
                             
                     {% if user|has_role:'admin,owner' %}
                     <li class="nav-item dropdown">
