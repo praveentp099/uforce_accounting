@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
+from django.core.exceptions import ValidationError
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (('admin', 'Admin'), ('owner', 'Company Owner'), ('supervisor', 'Supervisor'), ('foreman', 'Foreman'))
@@ -146,3 +147,42 @@ class InvoicePayment(models.Model):
 
     def __str__(self):
         return f"Payment of {self.amount} for {self.invoice.title}"
+    
+class Journal(models.Model):
+    """
+    Represents a complete accounting transaction. It is linked to a user and optionally to a project.
+    """
+    VOUCHER_TYPES = (
+        ('journal', 'Journal Voucher'), ('payment', 'Payment Voucher'),
+        ('receipt', 'Receipt Voucher'), ('contra', 'Contra Voucher'),
+    )
+    date = models.DateField()
+    description = models.TextField()
+    voucher_type = models.CharField(max_length=20, choices=VOUCHER_TYPES)
+    project = models.ForeignKey('projects.Project', on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return f"{self.get_voucher_type_display()} on {self.date}: {self.description}"
+
+class JournalEntry(models.Model):
+    """
+    A single debit or credit line within a Journal. It is linked to one Account.
+    """
+    journal = models.ForeignKey(Journal, on_delete=models.CASCADE, related_name='entries')
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.account.name} {'DR' if self.debit > 0 else 'CR'} {self.debit or self.credit}"
+
+    def clean(self):
+        if self.debit > 0 and self.credit > 0:
+            raise ValidationError("An entry cannot have both a debit and a credit.")
+        if self.debit == 0 and self.credit == 0:
+            raise ValidationError("An entry must have either a debit or a credit.")

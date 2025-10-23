@@ -24,4 +24,9 @@ urlpatterns = [
     path('invoices/create/', views.invoice_create_view, name='invoice_create'),
     path('invoices/<int:pk>/', views.invoice_detail_view, name='invoice_detail'),
     path('invoices/<int:pk>/update/', views.invoice_update_view, name='invoice_update'),
+    # URLs for the Accounting Journal
+    path('journal/', views.journal_list_view, name='journal_list'),
+    path('journal/create/', views.journal_create_view, name='journal_create'),
+    path('journal/<int:pk>/update/', views.journal_update_view, name='journal_update'),
+    path('journal/<int:pk>/delete/', views.journal_delete_view, name='journal_delete'),
 ]

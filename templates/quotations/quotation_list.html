@@ -11,30 +11,68 @@
     {% endif %}
 </div>
 
-<div class="row">
-    <!-- Pending Column -->
+<!-- New Summary Row -->
+<div class="row mb-4">
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-warning text-dark"><h5><i class="fas fa-hourglass-half"></i> Pending</h5></div>
-            <div class="card-body">
-                {% for quote in pending_quotations %}
-                    {% include 'quotations/partials/_quotation_card.html' with quotation=quote %}
-                {% empty %}
-                    <p class="text-muted">No pending quotations.</p>
-                {% endfor %}
+        <div class="card stat-card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-warning">Pending Approval</h5>
+                <h2 class="mb-0 display-5">{{ pending_count }}</h2>
             </div>
         </div>
     </div>
-    <!-- Approved Column -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header"><h5>Historical Approval Rate</h5></div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div style="position: relative; height: 200px;">
+                            <canvas id="approvalChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Approved:</strong>
+                                <span class="badge bg-success rounded-pill fs-6">{{ stats.approved }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Rejected:</strong>
+                                <span class="badge bg-danger rounded-pill fs-6">{{ stats.rejected }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Columns -->
+<div class="row">
+    <!-- Pending & Under Review -->
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header bg-success text-white"><h5><i class="fas fa-check-circle"></i> Approved</h5></div>
+            <div class="card-header bg-warning text-dark"><h5><i class="fas fa-hourglass-half"></i> Pending / Review</h5></div>
             <div class="card-body">
-                {% for quote in approved_quotations %}
-                    {% include 'quotations/partials/_quotation_card.html' with quotation=quote %}
+                {% for quote in pending_quotations %}
+                <div class="card mb-2 p-2 border rounded">
+                    <a href="{% url 'quotation_detail' quote.pk %}"><strong>{{ quote.title }}</strong></a>
+                    <small class="d-block text-muted">{{ quote.client_name }} (Sent)</small>
+                </div>
                 {% empty %}
-                    <p class="text-muted">No approved quotations.</p>
                 {% endfor %}
+                {% for quote in review_quotations %}
+                <div class="card mb-2 p-2 border rounded">
+                    <a href="{% url 'quotation_detail' quote.pk %}"><strong>{{ quote.title }}</strong></a>
+                    <small class="d-block text-muted">{{ quote.client_name }} (Reviewing)</small>
+                </div>
+                {% empty %}
+                {% endfor %}
+                {% if not pending_quotations and not review_quotations %}
+                <p class="text-muted">No quotations are pending.</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -44,12 +82,66 @@
             <div class="card-header bg-info text-white"><h5><i class="fas fa-sync-alt"></i> Revised</h5></div>
             <div class="card-body">
                 {% for quote in revised_quotations %}
-                    {% include 'quotations/partials/_quotation_card.html' with quotation=quote %}
+                <div class="card mb-2 p-2 border rounded">
+                    <a href="{% url 'quotation_detail' quote.pk %}"><strong>{{ quote.title }}</strong></a>
+                    <small class="d-block text-muted">{{ quote.client_name }} (Revisions: {{ quote.revision_count }})</small>
+                </div>
                 {% empty %}
-                    <p class="text-muted">No revised quotations.</p>
+                <p class="text-muted">No revised quotations.</p>
                 {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- Approved / Rejected Column -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-secondary text-white"><h5><i class="fas fa-check-circle"></i> Finalized</h5></div>
+            <div class="card-body">
+                {% for quote in approved_quotations %}
+                <div class="card mb-2 p-2 border border-success rounded">
+                    <a href="{% url 'quotation_detail' quote.pk %}"><strong>{{ quote.title }}</strong></a>
+                    <small class="d-block text-success"><i class="fas fa-check"></i> Approved</Vsmall>
+                </div>
+                {% empty %}
+                {% endfor %}
+                {% for quote in rejected_quotations %}
+                <div class="card mb-2 p-2 border border-danger rounded">
+                    <a href="{% url 'quotation_detail' quote.pk %}"><strong>{{ quote.title }}</strong></a>
+                    <small class="d-block text-danger"><i class="fas fa-times"></i> Rejected</small>
+                </div>
+                {% empty %}
+                {% endfor %}
+                {% if not approved_quotations and not rejected_quotations %}
+                <p class="text-muted">No quotations finalized.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const approvalCtx = document.getElementById('approvalChart');
+    if (approvalCtx) {
+        new Chart(approvalCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    data: {{ chart_data|safe }},
+                    backgroundColor: ['#27ae60', '#e74c3c'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

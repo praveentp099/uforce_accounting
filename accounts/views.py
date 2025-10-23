@@ -17,6 +17,8 @@ from decimal import Decimal
 from django.db import transaction
 from .models import Invoice, InvoicePayment, Account, Transaction
 from .forms import InvoiceForm, InvoicePaymentForm
+from .models import Journal, JournalEntry
+from .forms import JournalEntryFormSet, ContraVoucherForm
 
 # --- Reusable Permission Checker ---
 def is_admin_or_owner(user):
@@ -515,3 +517,96 @@ def invoice_update_view(request, pk):
     else:
         form = InvoiceForm(instance=invoice)
     return render(request, 'accounts/invoice_form.html', {'form': form, 'title': f'Edit Invoice: {invoice.title}'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def journal_list_view(request):
+    """ (Read) Displays a list of all journal transactions. """
+    journals = Journal.objects.select_related('created_by', 'project').prefetch_related('entries__account').all()
+    return render(request, 'accounts/journal_list.html', {'journals': journals})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def journal_create_view(request):
+    """ (Create) A dynamic view to create various types of journal vouchers. """
+    voucher_type = request.GET.get('type', 'journal')
+    
+    if voucher_type == 'contra':
+        form = ContraVoucherForm(request.POST or None)
+        if request.method == 'POST' and form.is_valid():
+            data = form.cleaned_data
+            with transaction.atomic():
+                journal = Journal.objects.create(
+                    date=data['date'],
+                    description=data['description'],
+                    voucher_type='contra',
+                    created_by=request.user
+                )
+                JournalEntry.objects.create(journal=journal, account=data['from_account'], credit=data['amount'])
+                JournalEntry.objects.create(journal=journal, account=data['to_account'], debit=data['amount'])
+            messages.success(request, 'Contra entry recorded successfully.')
+            return redirect('journal_list')
+        
+        context = {'form': form, 'voucher_type': voucher_type, 'title': 'Create Contra Voucher'}
+        return render(request, 'accounts/journal_form.html', context)
+
+    else: # Handle standard Journal, Payment, or Receipt vouchers
+        journal = Journal(voucher_type=voucher_type, created_by=request.user)
+        if request.method == 'POST':
+            formset = JournalEntryFormSet(request.POST, instance=journal)
+            if formset.is_valid():
+                with transaction.atomic():
+                    journal.date = request.POST.get('date')
+                    journal.description = request.POST.get('description')
+                    journal.save()
+                    formset.save()
+                messages.success(request, f'{voucher_type.title()} voucher recorded successfully.')
+                return redirect('journal_list')
+        else:
+            formset = JournalEntryFormSet(instance=journal)
+            
+        context = {'formset': formset, 'voucher_type': voucher_type, 'title': f'Create {voucher_type.title()} Voucher'}
+        return render(request, 'accounts/journal_form.html', context)
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def journal_update_view(request, pk):
+    """ (Update) Handles the editing of an existing journal entry. """
+    journal = get_object_or_404(Journal, pk=pk)
+    
+    # Contra entries are simple and should be deleted/recreated, not edited.
+    if journal.voucher_type == 'contra':
+        messages.error(request, "Contra entries cannot be edited. Please delete and recreate it if necessary.")
+        return redirect('journal_list')
+
+    if request.method == 'POST':
+        formset = JournalEntryFormSet(request.POST, instance=journal)
+        if formset.is_valid():
+            with transaction.atomic():
+                journal.date = request.POST.get('date')
+                journal.description = request.POST.get('description')
+                journal.save()
+                formset.save()
+            messages.success(request, 'Journal entry updated successfully.')
+            return redirect('journal_list')
+    else:
+        formset = JournalEntryFormSet(instance=journal)
+
+    context = {
+        'formset': formset,
+        'journal': journal,
+        'voucher_type': journal.voucher_type,
+        'title': f'Edit {journal.voucher_type.title()} Voucher'
+    }
+    return render(request, 'accounts/journal_form.html', context)
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def journal_delete_view(request, pk):
+    """ (Delete) Handles the deletion of a journal entry. """
+    journal = get_object_or_404(Journal, pk=pk)
+    if request.method == 'POST':
+        journal_desc = str(journal)
+        journal.delete()
+        messages.success(request, f'Journal entry "{journal_desc}" has been deleted.')
+    return redirect('journal_list')

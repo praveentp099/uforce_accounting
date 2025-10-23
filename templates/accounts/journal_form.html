@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }} | uForce Accounting{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-book-open"></i> {{ title }}</h1>
+    <a href="{% url 'journal_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Journal</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors|first }}</div>
+            {% elif formset.non_form_errors %}
+            <div class="alert alert-danger">{{ formset.non_form_errors|first }}</div>
+            {% endif %}
+
+            {% if voucher_type == 'contra' %}
+                <!-- Simple Contra Form -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.from_account.label }}</label>
+                        {% render_field form.from_account class="form-select" %}
+                        <small class="text-danger">{{ form.from_account.errors|first }}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.to_account.label }}</label>
+                        {% render_field form.to_account class="form-select" %}
+                        <small class="text-danger">{{ form.to_account.errors|first }}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.amount.label }}</label>
+                        {% render_field form.amount class="form-control" %}
+                        <small class="text-danger">{{ form.amount.errors|first }}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.date.label }}</label>
+                        {% render_field form.date class="form-control" %}
+                        <small class="text-danger">{{ form.date.errors|first }}</small>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ form.description.label }}</label>
+                        {% render_field form.description class="form-control" %}
+                        <small class="text-danger">{{ form.description.errors|first }}</small>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Dynamic Journal Formset for Journal, Payment, Receipt -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" value="{{ journal.date|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Project (Optional)</label>
+                        <select name="project" class="form-select">
+                            <option value="">---------</option>
+                            {# Assuming you pass a 'projects' queryset to the context for this form #}
+                            {% for p in projects %} 
+                                <option value="{{ p.pk }}" {% if journal.project_id == p.pk %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2" required>{{ journal.description|default:'' }}</textarea>
+                    </div>
+                </div>
+                
+                {{ formset.management_form }}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                            <th>Delete?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formset-body">
+                        {% for form in formset %}
+                        <tr class="formset-row">
+                            {{ form.id }}
+                            <td style="min-width: 250px;">{% render_field form.account class="form-select" %}</td>
+                            <td>{% render_field form.debit class="form-control text-end" %}</td>
+                            <td>{% render_field form.credit class="form-control text-end" %}</td>
+                            <td class="text-center">
+                                {% if form.instance.pk %}
+                                    <label class="form-check-label small">{% render_field form.DELETE class="form-check-input" %}</label>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-danger remove-form">&times;</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="button" id="add-form" class="btn btn-sm btn-outline-success"><i class="fas fa-plus"></i> Add Row</button>
+            {% endif %}
+
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Entry</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/template" id="empty-form-template">
+    <tr class="formset-row">
+        {{ formset.empty_form.id }}
+        <td style="min-width: 250px;">{% render_field formset.empty_form.account class="form-select" %}</td>
+        <td>{% render_field formset.empty_form.debit class="form-control text-end" %}</td>
+        <td>{% render_field formset.empty_form.credit class="form-control text-end" %}</td>
+        <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-form">&times;</button></td>
+    </tr>
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addFormButton = document.getElementById('add-form');
+    if (addFormButton) {
+        addFormButton.addEventListener('click', function() {
+            const formsetBody = document.getElementById('formset-body');
+            const totalForms = document.getElementById('id_entries-TOTAL_FORMS');
+            const formIdx = totalForms.value;
+            const emptyFormHtml = document.getElementById('empty-form-template').innerHTML.replace(/__prefix__/g, formIdx);
+            formsetBody.insertAdjacentHTML('beforeend', emptyFormHtml);
+            totalForms.value = parseInt(formIdx) + 1;
+        });
+    }
+
+    const formsetBody = document.getElementById('formset-body');
+    if(formsetBody) {
+        formsetBody.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-form')) {
+                e.target.closest('.formset-row').remove();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

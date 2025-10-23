@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load auth_extras %}
+
+{% block title %}Quotation: {{ quotation.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-file-invoice"></i> {{ quotation.title }}</h1>
+        <!-- Updated to show current status in the header -->
+        <h5 class="text-muted">
+            Client: {{ quotation.client_name }} | 
+            Status: <strong>{{ quotation.get_status_display }}</strong> | 
+            Total Files: {{ quotation.files.all.count }} | 
+            Revisions: {{ quotation.revision_count }}
+        </h5>
+    </div>
+    <div class="btn-group">
+        {% if user|has_role:'admin,owner' and quotation.status != 'rejected' and quotation.status != 'approved' %}
+            <form method="post" action="{% url 'quotation_reject' quotation.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Reject Quotation</button>
+            </form>
+        {% endif %}
+        <a href="{% url 'quotation_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- File Revisions -->
+    <div class="col-lg-8 mb-4">
+        <div class="card mb-4">
+            <div class="card-header"><h5>File Revisions</h5></div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for file in quotation.files.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ file.file.url }}" target="_blank"><strong>{{ file.caption|default:file.file.name }}</strong></a>
+                            <small class="d-block text-muted">Uploaded by {{ file.uploaded_by.username }} on {{ file.created_at|date:"Y-m-d" }}</small>
+                        </div>
+                        <div class="btn-group">
+                            <!-- Ensured View button is always visible -->
+                            <a href="{{ file.file.url }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a>
+                            {% if user|has_role:'admin,owner' %}
+                                {% if quotation.approved_file == file %}
+                                    <span class="btn btn-sm btn-success disabled"><i class="fas fa-check-circle"></i> Approved</span>
+                                {% elif quotation.status != 'rejected' %}
+                                    <form method="post" action="{% url 'quotation_approve_file' quotation.pk file.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success">Set as Approved</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No files found for this quotation.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Column -->
+    <div class="col-lg-4 mb-4">
+        <!-- New Approval Chance Card -->
+        <div class="card mb-4">
+            <div class="card-header"><h5><i class="fas fa-chart-pie"></i> Quotation Status</h5></div>
+            <div class="card-body d-flex justify-content-center align-items-center" style="position: relative; height: 200px;">
+                <canvas id="approvalChanceChart"></canvas>
+                <div id="chart-status-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; font-weight: bold;">
+                    <!-- Text will be set by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Revision Card -->
+        <div class="card mb-4">
+            <div class="card-header"><h5><i class="fas fa-upload"></i> Upload a Revision</h5></div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_revision" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">{{ file_form.file.label }}</label>
+                        {% render_field file_form.file class="form-control" %}
+                        <small class="text-danger">{{ file_form.file.errors|first }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ file_form.caption.label }}</label>
+                        {% render_field file_form.caption class="form-control" %}
+                        <small class="text-danger">{{ file_form.caption.errors|first }}</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Upload New Revision</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Update Status Card -->
+        <div class="card">
+            <div class="card-header"><h5><i class="fas fa-edit"></i> Update Status & Notes</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_status" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">{{ status_form.status.label }}</label>
+                        {% render_field status_form.status class="form-select" %}
+                        <small class="text-danger">{{ status_form.status.errors|first }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ status_form.status_notes.label }}</label>
+                        {% render_field status_form.status_notes class="form-control" %}
+                        <small class="text-danger">{{ status_form.status_notes.errors|first }}</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// This script is for the modal, it's not in the original file
+// but it is needed for the 'Edit Task' button in the related project_detail.html
+// Assuming it might be needed if you copy-paste, but it's not related to *this* template.
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const status = "{{ quotation.status|escapejs }}";
+    let chartData;
+    let chartColor;
+    let chartLabel;
+
+    switch(status) {
+        case 'pending':
+            chartData = [25, 75];
+            chartColor = '#f39c12'; // Warning (Yellow/Orange)
+            chartLabel = 'Pending';
+            break;
+        case 'under_review':
+            chartData = [50, 50];
+            chartColor = '#3498db'; // Info (Blue)
+            chartLabel = 'Reviewing';
+            break;
+        case 'revised':
+            chartData = [75, 25];
+            chartColor = '#e67e22'; // Darker Orange
+            chartLabel = 'Revised';
+            break;
+        case 'approved':
+            chartData = [100, 0];
+            chartColor = '#27ae60'; // Success (Green)
+            chartLabel = 'Approved!';
+            break;
+        case 'rejected':
+            chartData = [100, 0]; // Show 100% but in red
+            chartColor = '#e74c3c'; // Danger (Red)
+            chartLabel = 'Rejected';
+            break;
+        default:
+            chartData = [0, 100];
+            chartColor = '#95a5a6'; // Grey
+            chartLabel = 'Unknown';
+    }
+
+    const statusText = document.getElementById('chart-status-text');
+    if(statusText) {
+        statusText.innerText = chartLabel;
+        if (status === 'approved' || status === 'rejected') {
+            statusText.style.color = chartColor;
+        }
+    }
+
+    const approvalChanceCtx = document.getElementById('approvalChanceChart');
+    if (approvalChanceCtx) {
+        new Chart(approvalChanceCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: [chartColor, '#e9ecef'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
