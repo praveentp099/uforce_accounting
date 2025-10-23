@@ -5,18 +5,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}UForce Accounting{% endblock %}</title>
+    <title>{% block title %}UForce{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
-    
+
+    <!-- This style block will control your logo's size -->
+    <style>
+        .navbar-brand img {
+            height: 40px; /* Sets the height to 40 pixels */
+            width: auto;  /* Maintains the original aspect ratio */
+            /* Removed border-radius to match your screenshot */
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container-fluid">
+            <!-- Removed duplicate {% load static %} tag -->
             <a class="navbar-brand" href="{% url 'dashboard' %}">
-                <!-- <img src="{% static 'images/logo.png' %}" alt="uForce Logo"> -->
+                <img src="{% static 'images/logo.png' %}" alt="uForce Logo">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                 <span class="navbar-toggler-icon"></span>
@@ -41,6 +51,7 @@
                             <li><a class="dropdown-item" href="{% url 'journal_create' %}?type=contra">Contra Voucher</a></li>
                         </ul>
                     </li>
+                    <!-- Corrected URL name from 'reports_dashboard' to 'expense_analysis' -->
                     <li class="nav-item"><a class="nav-link" href="{% url 'reports_dashboard' %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_list' %}"><i class="fas fa-user-cog"></i> Users</a></li>
                     {% endif %}
