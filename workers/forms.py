@@ -15,11 +15,14 @@ class WorkerForm(forms.ModelForm):
 
     class Meta:
         model = Worker
-        # Updated fields to include 'group' and specific OT rates
+        # Updated fields to include 'dob'
         fields = [
-            'name', 'worker_type', 'group', 'contact', 
+            'name', 'worker_type', 'dob', 'group', 'contact', 
             'fixed_wage', 'daily_wage', 'ot1_rate', 'ot2_rate', 'is_active'
         ]
+        widgets = {
+            'dob': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,27 +32,30 @@ class WorkerForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         worker_type = cleaned_data.get('worker_type')
+        dob = cleaned_data.get('dob')
+
+        # --- New DOB Validation ---
+        if worker_type == 'own' and not dob:
+            self.add_error('dob', "Date of Birth is required for 'Own' workers.")
+        
+        # --- Existing Group/Wage Validation ---
         group = cleaned_data.get('group')
         new_group_name = cleaned_data.get('new_group_name')
 
         if worker_type == 'outsourced':
-            # An outsourced worker must be in a group (either existing or new)
             if not group and not new_group_name:
                 raise forms.ValidationError(
                     "An outsourced worker must belong to a group. Please select an existing group or create a new one.",
                     code='no_group'
                 )
-            # User cannot select an existing group AND create a new one simultaneously
             if group and new_group_name:
                 raise forms.ValidationError(
                     "Please either select an existing group or create a new one, not both.",
                     code='both_groups'
                 )
-            # Ensure the new group name is unique
             if new_group_name and OutsourcedGroup.objects.filter(name__iexact=new_group_name).exists():
                 self.add_error('new_group_name', 'A group with this name already exists.')
 
-        # Validate wage fields based on worker type
         fixed_wage = cleaned_data.get('fixed_wage')
         daily_wage = cleaned_data.get('daily_wage')
         if worker_type == 'own' and (fixed_wage is None or fixed_wage <= 0):

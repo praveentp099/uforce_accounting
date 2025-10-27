@@ -49,6 +49,14 @@ def role_check(role_list):
 def dashboard_view(request):
     today = date.today()
     
+    # --- New Birthday Alert Logic ---
+    birthday_workers = Worker.objects.filter(
+        worker_type='own', 
+        is_active=True, 
+        dob__month=today.month, 
+        dob__day=today.day
+    )
+    
     # Financial Summaries (including Pending Invoices)
     pending_invoices = Invoice.objects.annotate(
         amount_received=Sum('payments__amount', default=0, output_field=DecimalField())
@@ -83,6 +91,7 @@ def dashboard_view(request):
     sorted_chart_data = sorted(chart_data.items(), key=lambda x: datetime.strptime(x[0], '%b %Y'))
 
     context = {
+        'birthday_workers': birthday_workers, # Added the birthday list to the context
         'pending_invoices_total': pending_invoices_total,
         'total_credit_due': total_payable,
         'active_projects_count': active_projects_count,

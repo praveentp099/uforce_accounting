@@ -32,6 +32,7 @@ class Worker(models.Model):
         related_name='members'
     )
     fixed_wage = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Monthly salary for 'Own' workers.")
+    dob = models.DateField(verbose_name="Date of Birth", null=True, blank=True)
     daily_wage = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Daily wage for 'Outsourced' workers.")
     contact = models.CharField(max_length=15, blank=True)
     ot1_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="OT1 Rate", help_text="Overtime rate per hour for normal days.")

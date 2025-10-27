@@ -186,3 +186,27 @@ class JournalEntry(models.Model):
             raise ValidationError("An entry cannot have both a debit and a credit.")
         if self.debit == 0 and self.credit == 0:
             raise ValidationError("An entry must have either a debit or a credit.")
+        
+class Supplier(models.Model):
+    """
+    A central table to store all suppliers, vendors, rental shops, etc.
+    This is the model referenced by the ProjectExpense model in your Canvas.
+    """
+    SUPPLIER_TYPES = (
+        ('materials', 'Materials Supplier'),
+        ('vehicle_rent', 'Vehicle Rental'),
+        ('equipment_rent', 'Equipment Rental'),
+        ('food_beverages', 'Food & Beverages'),
+        ('other', 'Other'),
+    )
+    name = models.CharField(max_length=255, unique=True)
+    category = models.CharField(max_length=50, choices=SUPPLIER_TYPES, help_text="The main type of service this supplier provides.")
+    contact_person = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name

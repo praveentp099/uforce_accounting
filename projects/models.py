@@ -4,6 +4,7 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 from django.urls import reverse 
 from workers.models import WorkerAttendance
+from accounts.models import Supplier
 
 class ProjectManager(models.Manager):
     """
@@ -149,16 +150,25 @@ class ProjectDocument(models.Model):
 
 class ProjectExpense(models.Model):
     """
-    Represents a non-wage expense related to a project.
+    Represents a non-wage expense related to a project, now with supplier tracking.
     """
     EXPENSE_TYPES = (
         ('materials', 'Materials'),
         ('vehicle_rent', 'Vehicle Rent'),
         ('equipment_rent', 'Equipment Rent'),
-        ('other', 'Other'),
+        ('food_beverages', 'Food & Beverages'),
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='expenses')
     expense_type = models.CharField(max_length=50, choices=EXPENSE_TYPES)
+    
+    # This field now links to the new Supplier model
+    supplier = models.ForeignKey(
+        'accounts.Supplier',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Supplier/Shop"
+    )
+    
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     date = models.DateField()
     description = models.TextField(blank=True)
@@ -167,6 +177,8 @@ class ProjectExpense(models.Model):
 
     def __str__(self):
         return f"{self.get_expense_type_display()} for {self.project.name}"
+
+
 
 
 class ProjectPhoto(models.Model):

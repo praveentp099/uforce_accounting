@@ -72,12 +72,13 @@
                                 <a href="{% url 'worker_update' worker.id %}" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                 {% endif %}
                                 {% if user|has_role:'admin,owner' %}
-                                <form action="{% url 'worker_toggle_active' worker.id %}" method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm {% if worker.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if worker.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                        <i class="fas {% if worker.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
-                                    </button>
-                                </form>
+                                <!-- This button triggers the confirmation modal -->
+                                <button type="button" class="btn btn-sm {% if worker.is_active %}btn-danger{% else %}btn-success{% endif %}"
+                                    title="{% if worker.is_active %}Deactivate{% else %}Activate{% endif %}"
+                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                                    onclick="setupConfirmationModal('{% url 'worker_toggle_active' worker.id %}', 'Confirm Status Change', 'Are you sure you want to {% if worker.is_active %}deactivate{% else %}activate{% endif %} {{ worker.name|escapejs }}?', '{% if worker.is_active %}Deactivate{% else %}Activate{% endif %}')">
+                                    <i class="fas {% if worker.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                </button>
                                 {% endif %}
                             </div>
                         </td>
@@ -90,5 +91,8 @@
         </div>
     </div>
 </div>
+
+<!-- Include the confirmation modal -->
+{% include 'partials/_confirm_delete_modal.html' %}
 {% endblock %}
 

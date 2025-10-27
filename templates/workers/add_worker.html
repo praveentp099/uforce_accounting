@@ -29,12 +29,28 @@
                 <small class="text-danger">{{ form.worker_type.errors|first }}</small>
             </div>
             
+            <!-- Date of Birth (for Own Worker) -->
+            <div class="col-md-6" id="dob-field" style="display: none;">
+                <label for="{{ form.dob.id_for_label }}" class="form-label">{{ form.dob.label }}</label>
+                {% render_field form.dob class="form-control" %}
+                <small class="text-danger">{{ form.dob.errors|first }}</small>
+            </div>
+
+            <!-- Fixed Wage (for Own Worker) -->
+            <div class="col-md-6" id="fixed-wage-field" style="display: none;">
+                <label for="{{ form.fixed_wage.id_for_label }}" class="form-label">{{ form.fixed_wage.label }}</label>
+                {% render_field form.fixed_wage class="form-control" type="number" step="0.01" %}
+                 <small class="text-danger">{{ form.fixed_wage.errors|first }}</small>
+            </div>
+
+            <!-- Group (for Outsourced Worker) -->
             <div class="col-md-6" id="group-field" style="display: none;">
                 <label for="{{ form.group.id_for_label }}" class="form-label">{{ form.group.label }}</label>
                 {% render_field form.group class="form-select" %}
                  <small class="text-danger">{{ form.group.errors|first }}</small>
             </div>
 
+            <!-- New Group (for Outsourced Worker) -->
             <div class="col-md-6" id="new-group-field" style="display: none;">
                 <label for="{{ form.new_group_name.id_for_label }}" class="form-label">{{ form.new_group_name.label }}</label>
                 {% render_field form.new_group_name class="form-control" %}
@@ -42,24 +58,27 @@
                 <small class="text-danger">{{ form.new_group_name.errors|first }}</small>
             </div>
 
-            <div class="col-md-6" id="fixed-wage-field" style="display: none;">
-                <label for="{{ form.fixed_wage.id_for_label }}" class="form-label">{{ form.fixed_wage.label }}</label>
-                {% render_field form.fixed_wage class="form-control" type="number" step="0.01" %}
-                 <small class="text-danger">{{ form.fixed_wage.errors|first }}</small>
-            </div>
-
+            <!-- Daily Wage (for Outsourced Worker) -->
             <div class="col-md-6" id="daily-wage-field" style="display: none;">
                 <label for="{{ form.daily_wage.id_for_label }}" class="form-label">{{ form.daily_wage.label }}</label>
                 {% render_field form.daily_wage class="form-control" type="number" step="0.01" %}
                 <small class="text-danger">{{ form.daily_wage.errors|first }}</small>
             </div>
+            
+            <!-- Is Leader (for Outsourced Worker) -->
+            <div class="col-md-6" id="is-leader-field" style="display: none;">
+                <div class="form-check form-switch pt-4">
+                    {% render_field form.is_leader class="form-check-input" %}
+                    <label class="form-check-label" for="{{ form.is_leader.id_for_label }}">{{ form.is_leader.label }}</label>
+                </div>
+            </div>
 
+            <!-- Standard Fields (for both) -->
             <div class="col-md-6">
                 <label for="{{ form.contact.id_for_label }}" class="form-label">{{ form.contact.label }}</label>
                 {% render_field form.contact class="form-control" %}
                 <small class="text-danger">{{ form.contact.errors|first }}</small>
             </div>
-
             <div class="col-md-6">
                 <label for="{{ form.ot1_rate.id_for_label }}" class="form-label">{{ form.ot1_rate.label }}</label>
                 {% render_field form.ot1_rate class="form-control" type="number" step="0.01" %}
@@ -69,13 +88,6 @@
                 <label for="{{ form.ot2_rate.id_for_label }}" class="form-label">{{ form.ot2_rate.label }}</label>
                 {% render_field form.ot2_rate class="form-control" type="number" step="0.01" %}
                  <small class="text-danger">{{ form.ot2_rate.errors|first }}</small>
-            </div>
-
-            <div class="col-md-6" id="is-leader-field" style="display: none;">
-                <div class="form-check form-switch pt-4">
-                    {% render_field form.is_leader class="form-check-input" %}
-                    <label class="form-check-label" for="{{ form.is_leader.id_for_label }}">{{ form.is_leader.label }}</label>
-                </div>
             </div>
             
             <div class="col-12">
@@ -102,28 +114,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const isLeaderField = document.getElementById('is-leader-field');
     const fixedWageField = document.getElementById('fixed-wage-field');
     const dailyWageField = document.getElementById('daily-wage-field');
+    const dobField = document.getElementById('dob-field');
 
     function toggleFields() {
         const selectedType = workerTypeSelect.value;
+        
+        // Hide all conditional fields first
+        dobField.style.display = 'none';
+        fixedWageField.style.display = 'none';
+        groupField.style.display = 'none';
+        newGroupField.style.display = 'none';
+        isLeaderField.style.display = 'none';
+        dailyWageField.style.display = 'none';
+
         if (selectedType === 'own') {
-            groupField.style.display = 'none';
-            newGroupField.style.display = 'none';
-            isLeaderField.style.display = 'none';
+            // Show fields for 'Own' worker
+            dobField.style.display = 'block';
             fixedWageField.style.display = 'block';
-            dailyWageField.style.display = 'none';
         } else if (selectedType === 'outsourced') {
+            // Show fields for 'Outsourced' worker
             groupField.style.display = 'block';
             newGroupField.style.display = 'block';
             isLeaderField.style.display = 'block';
-            fixedWageField.style.display = 'none';
             dailyWageField.style.display = 'block';
-        } else {
-            // Hide all by default if nothing is selected
-            groupField.style.display = 'none';
-            newGroupField.style.display = 'none';
-            isLeaderField.style.display = 'none';
-            fixedWageField.style.display = 'none';
-            dailyWageField.style.display = 'none';
         }
     }
 

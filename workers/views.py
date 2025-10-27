@@ -14,24 +14,18 @@ def worker_list_view(request):
     """
     Displays a list of active workers that can be filtered by type.
     """
-    # Get the base queryset of all active workers
     base_workers = Worker.objects.filter(is_active=True)
-
-    # Get the type filter from the URL query parameter (e.g., ?type=own)
     type_filter = request.GET.get('type')
 
-    # Efficiently calculate the count for each category
     counts = base_workers.aggregate(
         all=Count('id'),
         own=Count('id', filter=Q(worker_type='own')),
         outsourced=Count('id', filter=Q(worker_type='outsourced'))
     )
 
-    # Filter the workers to be displayed in the table
     if type_filter in ['own', 'outsourced']:
         display_workers = base_workers.filter(worker_type=type_filter)
     else:
-        # If no filter is applied, show all workers
         display_workers = base_workers
 
     context = {
@@ -40,6 +34,50 @@ def worker_list_view(request):
         'current_filter': type_filter,
     }
     return render(request, 'workers/worker_list.html', context)
+
+@login_required
+@user_passes_test(can_manage_projects)
+def worker_create_view(request):
+    """
+    Handles the creation of a new worker using the WorkerForm.
+    """
+    if request.method == 'POST':
+        form = WorkerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Worker created successfully.')
+            return redirect('worker_list')
+    else:
+        form = WorkerForm()
+    return render(request, 'workers/add_worker.html', {'form': form, 'title': 'Add New Worker'})
+
+@login_required
+@user_passes_test(can_manage_projects)
+def worker_update_view(request, pk):
+    """
+    Handles the editing of an existing worker using the WorkerForm.
+    """
+    worker = get_object_or_404(Worker, pk=pk)
+    if request.method == 'POST':
+        form = WorkerForm(request.POST, instance=worker)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Worker updated successfully.')
+            return redirect('worker_list')
+    else:
+        form = WorkerForm(instance=worker)
+    return render(request, 'workers/add_worker.html', {'form': form, 'title': f'Edit Worker: {worker.name}'})
+
+@login_required
+@user_passes_test(is_admin_or_owner)
+def worker_toggle_active_view(request, pk):
+    worker = get_object_or_404(Worker, pk=pk)
+    if request.method == 'POST':
+        worker.is_active = not worker.is_active
+        worker.save()
+        status = "activated" if worker.is_active else "deactivated"
+        messages.success(request, f'Worker has been {status}.')
+    return redirect('worker_list')
 
 @login_required
 def attendance_list_view(request):
@@ -107,43 +145,6 @@ def worker_detail_view(request, pk):
     }
     return render(request, 'workers/worker_detail.html', context)
 
-@login_required
-@user_passes_test(can_manage_projects)
-def worker_create_view(request):
-    if request.method == 'POST':
-        form = WorkerForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Worker created successfully.')
-            return redirect('worker_list')
-    else:
-        form = WorkerForm()
-    return render(request, 'workers/add_worker.html', {'form': form, 'title': 'Add New Worker'})
-
-@login_required
-@user_passes_test(can_manage_projects)
-def worker_update_view(request, pk):
-    worker = get_object_or_404(Worker, pk=pk)
-    if request.method == 'POST':
-        form = WorkerForm(request.POST, instance=worker)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Worker updated successfully.')
-            return redirect('worker_list')
-    else:
-        form = WorkerForm(instance=worker)
-    return render(request, 'workers/add_worker.html', {'form': form, 'title': f'Edit Worker: {worker.name}'})
-
-@login_required
-@user_passes_test(is_admin_or_owner)
-def worker_toggle_active_view(request, pk):
-    worker = get_object_or_404(Worker, pk=pk)
-    if request.method == 'POST':
-        worker.is_active = not worker.is_active
-        worker.save()
-        status = "activated" if worker.is_active else "deactivated"
-        messages.success(request, f'Worker has been {status}.')
-    return redirect('worker_list')
 
 
 
